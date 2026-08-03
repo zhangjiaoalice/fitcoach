@@ -1,6 +1,6 @@
 # FitCoach Agent — AI 健身减脂教练（全栈项目）
 
-> 学习型全栈 AI Agent 项目。分工：**前端由 AI 完成**（用户是前端工程师，无需重复练习）；**后端 + Agent 由用户手敲练习**（AI 提供骨架 + TODO）；基建由 AI 搭建。
+> 全栈 AI Agent 项目
 
 ## 技术栈
 
@@ -30,7 +30,7 @@ fitcoach/
 │   │   ├── services/         # 业务逻辑
 │   │   └── agent/            # Agent 引擎 + tools
 │   └── tests/
-└── frontend/# Vue3（AI 完成）
+└── frontend/# Vue3
 ```
 
 ## M0 快速启动
@@ -41,10 +41,9 @@ podman compose up -d          # 或 docker compose up -d
 
 # 2. 后端环境
 cd backend
-cp .env.example .env          # 按需改
-# venv 已由 AI 创建在 backend/.venv
+cp .env.example .env
 
-# 3. 完成两处练习后启动
+# 3. 启动
 ./.venv/bin/uvicorn app.main:app --reload
 
 # 4. 验证
