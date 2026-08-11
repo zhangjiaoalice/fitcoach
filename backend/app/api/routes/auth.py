@@ -21,7 +21,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
     """注册： 交给service处理，捕获重复邮箱错误转成 400"""
     try:
-        user = await auth_service.create_usr(db, data)
+        user = await auth_service.create_user(db, data)
     except ValueError as e:
         # service 抛的“邮箱已注册” 在这里转成标准的HTTP 400
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

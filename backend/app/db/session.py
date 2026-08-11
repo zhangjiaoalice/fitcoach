@@ -1,7 +1,7 @@
 """
 数据库连接与会话管理
 - Engine(引擎)：数据库连接池总管，整个应用只需要一个
-- Session(会话)： 一次数据库交互上下文，每个请求用一个，用完关闭
+- Session(会话)： 一次数据库交互上下文，每个请求用一个，用完关闭, 维持会话状态并与数据库交互
 - Base: 所有 ORM 模型的基类，每个模型都会继承它
 """
 from collections.abc import AsyncGenerator
