@@ -10,8 +10,9 @@ route 层职责： 接收 HTTP 请求 -> 调service -> 返回响应，不写业�
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.security import create_access_token
 from app.db.session import get_db
-from app.schemas.user import UserCreate, UserOut
+from app.schemas.user import UserCreate, UserOut, UserLogin,Token
 from app.services import auth_service
 
 # prefix="/auth" 这组都以 /auth 开头；tags 用于文档分组
@@ -26,3 +27,13 @@ async def register(data: UserCreate, db: AsyncSession = Depends(get_db)):
         # service 抛的“邮箱已注册” 在这里转成标准的HTTP 400
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     return user
+
+@router.post("/login", response_model=Token)
+async def login(data: UserLogin, db: AsyncSession=Depends(get_db)):
+    """登录校验：校验登录邮箱-签发jwt, 失败转401"""
+    try:
+        user = await auth_service.authenticate_user(db, data.email, data.password)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+    token = create_access_token(subject=str(user.id))
+    return Token(access_token=token)

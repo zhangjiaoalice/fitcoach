@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     database_url: str
 
     # JWT
-    jwt_secret: str = "dev_secret_change_me"
+    jwt_secret: str = "dev_5bf71d85386f308417246b4b86774e964c812ec26faf4a94e4856dbab1f9e84e"
     jwt_algorithm: str ="HS256"
     jwt_expire_minutes: int = 1440
 

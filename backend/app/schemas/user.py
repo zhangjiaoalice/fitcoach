@@ -17,3 +17,13 @@ class UserOut(BaseModel):
     id: int
     email: EmailStr
     created_at: datetime
+
+class UserLogin(BaseModel):
+    """登录请求体"""
+    email: EmailStr
+    password: str
+
+class Token(BaseModel):
+    """登录成功返回的令牌，token_type 固定 bearer 是 OAuth2 惯例"""
+    access_token: str
+    token_type: str = "bearer"
