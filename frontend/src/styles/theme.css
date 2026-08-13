@@ -1,0 +1,74 @@
+:root {
+  /* 深色高端主题 tokens —— 全站统一从这里取色 */
+  --bg-app: #0c0f14;
+  --bg-elevated: #11151c;
+  --glass-bg: rgba(255, 255, 255, 0.045);
+  --glass-border: rgba(255, 255, 255, 0.07);
+  --hairline: rgba(255, 255, 255, 0.05);
+
+  --brand: #10b981;
+  --brand-light: #34d399;
+  --brand-bright: #3ddba0;
+  --brand-dark: #0d8a63;
+  --on-brand: #042117;
+  --brand-grad: linear-gradient(135deg, #10b981, #0d8a63);
+
+  --text-1: #f4f6f8;
+  --text-2: #c4cad3;
+  --text-3: #8b93a1;
+  --text-4: #6f7784;
+
+  --info: #5aa9f0;
+  --warn: #eab308;
+  --coral: #f0997b;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 22px;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-app);
+  color: var(--text-1);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 玻璃卡片通用类 */
+.glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+}
+
+/* 主 CTA 按钮 */
+.cta {
+  width: 100%;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--brand-grad);
+  color: var(--on-brand);
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.cta:active {
+  opacity: 0.85;
+}
