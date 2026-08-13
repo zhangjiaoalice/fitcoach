@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date
 
 from sqlalchemy import String, ForeignKey, Date, Integer, Numeric, Text, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column
@@ -11,14 +11,14 @@ class DietLog(Base):
     __tablename__ = "diet_logs"
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
-    # 日志时间
-    log_date: Mapped[datetime] = mapped_column(Date, nullable=False)
+    # 日志时间（使用date只包含时间）
+    log_date: Mapped[date] = mapped_column(Date, nullable=False)
     # 早餐/午餐/晚餐
     meal_type: Mapped[str] = mapped_column(String(20), nullable=False)
     # 食物名称
     food_name: Mapped[str] = mapped_column(String(255), nullable=False)
     # 量
-    amount_text: Mapped[str] = mapped_column(String(100), nullable=False)
+    amount_text: Mapped[str | None] = mapped_column(String(100))
     # 热量
     calories_kcal: Mapped[int | None] = mapped_column(Integer) 
     # 蛋白质
