@@ -10,7 +10,7 @@ from passlib.context import CryptContext
 import jwt
 
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from app.core.config import get_settings
 
 settings = get_settings()
@@ -28,7 +28,9 @@ def create_access_token(subject: str) -> str:
     - iat: 签发时间
     用 settings.jwt_secret_key 签名， 前端拿不到 secret 就伪造不出合法令牌 
     """
-    now = datetime.now()
+
+    # JWT 过期判断按 UTC 算,用本地时间可能有 8 小时偏差
+    now = datetime.now(timezone.utc)
     payload = {
         "sub": subject,
         "exp": now + timedelta(minutes=settings.jwt_expire_minutes),

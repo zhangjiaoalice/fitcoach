@@ -12,8 +12,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import create_access_token
 from app.db.session import get_db
-from app.schemas.user import UserCreate, UserOut, UserLogin,Token
+from app.schemas.user import UserCreate, UserOut, UserLogin, Token
 from app.services import auth_service
+from app.models.user import User
+from app.api.deps import get_current_user
 
 # prefix="/auth" 这组都以 /auth 开头；tags 用于文档分组
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -37,3 +39,9 @@ async def login(data: UserLogin, db: AsyncSession=Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
     token = create_access_token(subject=str(user.id))
     return Token(access_token=token)
+
+
+@router.get("/me", response_model=UserOut)
+async def me(current_user: User = Depends(get_current_user)):
+    """受保护接口：必须带 JWT 才能访问，返回当前登录用户"""
+    return current_user

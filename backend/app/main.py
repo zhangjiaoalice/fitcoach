@@ -9,7 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
-from app.api.routes import auth
+from app.api.routes import auth, profile
 
 
 # 应用生命周期管理
@@ -50,3 +50,5 @@ async def health(db: AsyncSession = Depends(get_db)):
 
 # 挂载认证路由： /auth/register 
 app.include_router(auth.router)
+# 挂载用户画像路由： /profile
+app.include_router(profile.router)

@@ -19,6 +19,7 @@ from app.db.session import Base
 # 关键：这里必须 import 每个模型，Base.metadata 才会包含它们。
 # 以后新增模型（M2 的 profile、M3 的 diet_logs...）都要在这里加一行 import。
 from app.models.user import User  # noqa: F401
+from app.models.profile import Profile  # noqa: F401
 
 config = context.config
 
