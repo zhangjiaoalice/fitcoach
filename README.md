@@ -65,3 +65,5 @@ curl http://localhost:8000/health   # 期望 {"status":"ok","db":"connected"}
 - [ ] M10 Agent Trace
 - [ ] M11 前端 Vue3
 - [ ] M12 上线部署
+
+model -> 迁移 -> schema -> service -> route
