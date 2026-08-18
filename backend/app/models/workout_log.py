@@ -12,7 +12,7 @@ class WorkoutLog(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
-    log_date: Mapped[date] | None = mapped_column(ForeignKey("diet_logs.log_date"), nullable=True)
+    log_date: Mapped[date] | None = mapped_column(Date, nullable=True)
     workout_type: Mapped[str] = mapped_column(String(50), nullable=False)
     duration_time: Mapped[int] = mapped_column(Integer, nullable=False)
     intensity: Mapped[int] = mapped_column(Integer, nullable=False)
