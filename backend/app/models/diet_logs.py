@@ -1,3 +1,6 @@
+"""
+ORM 模型： 将数据库表映射成 python 类，一张表就是一个类
+"""
 from datetime import date, datetime
 
 from sqlalchemy import String, ForeignKey, Date, Integer, Numeric, Text, DateTime, func
