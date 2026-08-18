@@ -1,11 +1,10 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from fastapi import HTTPException
 from datetime import date
 from typing import List
 
-from app.models.diet_logs import DietLog
+from app.models.diet_log import DietLog
 from app.schemas.diet_log import DietLogCreate, DietLogUpdate
 
 
@@ -26,7 +25,7 @@ async def list_diet_log(db: AsyncSession, user_id: int, log_date: date)-> List[D
     """根据日期查询日志列表"""
     stmt = select(DietLog).where(DietLog.user_id == user_id, DietLog.log_date == log_date)
     result = await db.execute(stmt)
-    return result.scalars().all() or None
+    return result.scalars().all()
 
 async def get_diet_log(db: AsyncSession, user_id: int, diet_id: int) -> DietLog:
     """根据id查询一条记录"""
