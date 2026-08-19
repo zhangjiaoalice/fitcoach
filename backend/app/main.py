@@ -9,7 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
-from app.api.routes import auth, profile, diet_log, workout_log
+from app.api.routes import auth, profile, diet_log, workout_log, weight_log
 
 
 # 应用生命周期管理
@@ -54,5 +54,7 @@ app.include_router(auth.router)
 app.include_router(profile.router)
 # 挂载饮食日志路由： /diet-logs
 app.include_router(diet_log.router)
-# 挂在训练日志路由 /workout-logs
+# 挂载训练日志路由 /workout-logs
 app.include_router(workout_log.router)
+# 挂载体重日志路由 /weight-logs
+app.include_router(weight_log.router)

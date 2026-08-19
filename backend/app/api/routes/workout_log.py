@@ -18,24 +18,20 @@ async def get_workout_logs(log_date: date, current_user: User=Depends(get_curren
 
 @router.post("", response_model=WorkoutLogOut)
 async def create_workout_log(log_data: CreateWorkoutLog, current_user: User=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    try:
-        workout_log = await workout_log_service.create_workout_log(db, current_user.id, log_data)
-    except Exception as e:
-        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail=str(e))
-    return workout_log
+    return await workout_log_service.create_workout_log(db, current_user.id, log_data)
 
 @router.put("/{workout_log_id}")
 async def update_workout_log(workout_log_id: int, log_data: UpdateWorkoutLog, current_user: User=Depends(get_current_user), db: AsyncSession=Depends(get_db)):
     try:
         workout_log = await workout_log_service.update_workout_log(db, current_user.id, workout_log_id, log_data)
     except Exception as e:
-        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail=str(e))
     return workout_log
 
 
-@router.delete("/{workout_log_id}")
+@router.delete("/{workout_log_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_workout_log(workout_log_id: int, current_user: User=Depends(get_current_user), db: AsyncSession=Depends(get_db)):
     try:
         await workout_log_service.delete_workout_log(db, current_user.id, workout_log_id)
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
