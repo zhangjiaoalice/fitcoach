@@ -5,14 +5,14 @@ from decimal import Decimal
 
 class CreateWeightLog(BaseModel):
     log_date: date
-    weight: Decimal
+    weight_kg: Decimal
     waist_cm: Decimal | None = None
     note: str | None = None
 
 
 class UpdateWeightLog(BaseModel):
     log_date: date | None = None
-    weight: Decimal | None = None
+    weight_kg: Decimal | None = None
     waist_cm: Decimal | None = None
     note: str | None = None
 
@@ -22,7 +22,7 @@ class WeightLogOut(BaseModel):
     id: int
     user_id: int
     log_date: date
-    weight: Decimal
+    weight_kg: Decimal
     waist_cm: Decimal | None = None
     note: str | None = None
     created_at: datetime

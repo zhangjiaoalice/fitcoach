@@ -4,15 +4,15 @@ from datetime import date, datetime
 
 class CreateWorkoutLog(BaseModel):
     workout_type: str
-    duration_time: int
-    intensity: int
+    duration_min: int
+    intensity: str
     log_date: date
     note: str | None = None
 
 class UpdateWorkoutLog(BaseModel):
     workout_type: str | None = None
-    duration_time: int | None = None
-    intensity: int | None = None
+    duration_min: int | None = None
+    intensity: str | None = None
     note: str | None = None
     log_date: date | None = None
 
@@ -21,8 +21,8 @@ class WorkoutLogOut(BaseModel):
     id: int
     user_id: int
     workout_type: str
-    duration_time: int
-    intensity: int
+    duration_min: int
+    intensity: str
     log_date: date
     created_at: datetime
     note: str | None = None

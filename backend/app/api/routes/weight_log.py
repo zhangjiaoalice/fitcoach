@@ -25,13 +25,14 @@ async def create_weight_log(data: CreateWeightLog, current_user: User=Depends(ge
 async def update_weight_log(weight_log_id: int, data: UpdateWeightLog, current_user: User=Depends(get_current_user), db: AsyncSession=Depends(get_db)):
     try:
         weight_log = await weight_log_service.update_weight_log(db, current_user.id, weight_log_id, data)
-    except Exception as e:
-        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail=str(e))
     return weight_log
 
 @router.delete("/{weight_log_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_weight_log(weight_log_id: int, current_user: User=Depends(get_current_user), db: AsyncSession=Depends(get_db)):
     try:
         await weight_log_service.delete_weight_log(db, current_user.id, weight_log_id)
-    except Exception as e:
-        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST, detail=str(e))
+    # except Exception 把数据库错、代码 bug 等都当成 404,会掩盖真实问题,用 ValueError catch 真实错误
+    except ValueError as e:
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail=str(e))
