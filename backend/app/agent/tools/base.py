@@ -57,6 +57,6 @@ class Tool:
 # 全局注册中心 - import工具模块是自动注册
 TOOL_REGISTRY: dict[str, Tool] = {}
 
-def register_tool(tool: Tool):
-    TOOL_REGISTRY(tool.name) = tool
+def register_tool(tool: Tool) -> None:
+    TOOL_REGISTRY[tool.name] = tool
 
