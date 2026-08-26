@@ -13,7 +13,7 @@ async def _handler(arguments: dict, ctx: AgentContext) -> dict[str, Any]:
     - arguments： LLM 传的参数（这个工具无参数，忽略）
     - ctx: 含db和current_user
     """
-    # LLM 传的事字符串，需要转成date对象再查
+    # LLM 传的是字符串，需要转成date对象再查
     log_date = date.fromisoformat(arguments["date"])
     # 获取饮食记录
     diet_logs = await diet_log_service.list_diet_log(ctx.db, ctx.current_user.id, log_date)
