@@ -1,14 +1,12 @@
-"""
-Agent 对话接口
-Round1 - 最小版本
-只做一次 LLM 调用， 不走Loop、不用工具
-先验证 HTTP -> Moonshot -> 回复这个路径
-"""
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
-from app.agent.moonshot_client import chat_completion
+from app.db.session import get_db
+from app.agent.loop import run_agent
+from app.agent.tools.base import AgentContext
+from app.services import agent_service
 from app.models.user import User
 
 router = APIRouter(prefix="/agent", tags=["agent"])
@@ -20,20 +18,28 @@ class ChatIn(BaseModel):
 class ChatOut(BaseModel):
     """返回给前端的回复"""
     reply: str
+    iterations: int
+    tool_calls: list[dict] | None = None
 
 @router.post("/chat", response_model=ChatOut)
-async def chat(data: ChatIn, current_user: User=Depends(get_current_user)):
-    # 构造 messages 数组
-    messages = [
-        {"role": "system", "content": "你是一名专业的运动营养学专家，兼健身健美的专业人士，有多年的健美比赛经验并获得过健美职业卡，擅长增肌、减脂、塑形，现在为用户提供专业的健身指导和营养建议，回答要具体、贴合用户情况。"},
-        {"role": "user", "content": data.message}
-    ]
+async def chat(data: ChatIn, current_user: User=Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    ctx = AgentContext(db = db, current_user = current_user)
 
-    # 调用 Moonshot API
-    response = await chat_completion(messages=messages)
+    try:
+        result = await run_agent(data.message, ctx)
+    except Exception as e:
+        # 出错也要记trace
+        await agent_service.save_trace(db, current_user.id, data.message, reply=None, iterations=0, tool_calls=None, error=str(e))
+        raise HTTPException(status_code=500, detail=f"Agent 执行失败： {e}")
 
-    # 从 response 中取出 assistant 的回复文本
-    reply = response["choices"][0]["message"]["content"]
+    # 记trace
+    await agent_service.save_trace(
+        db,
+        current_user.id,
+        data.message,
+        reply=result["reply"],
+        iterations=result["iterations"],
+        tool_calls=result["tool_calls"],
+    )
 
-
-    return ChatOut(reply=reply)
+    return ChatOut(**result)
