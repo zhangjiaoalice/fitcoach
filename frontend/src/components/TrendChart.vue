@@ -1,31 +1,37 @@
-<script setup>
-// 体重趋势面积图。传入 [{date, v}]，自动归一化算出SVG 折线点。
-import { computed } from 'vue'
+<script setup lang="ts">
+// 体重趋势面积图。传入 [{date, v}]，自动归一化算出 SVG 折线点。
+import { computed } from "vue";
 
-const props = defineProps({
-  data: { type: Array, required: true },
-})
+interface TrendPoint {
+  date: string;
+  v: number;
+}
 
-const W = 320
-const H = 98
-const padTop = 22
-const padBottom = 26
+const props = defineProps<{
+  data: TrendPoint[];
+}>();
+
+const W = 320;
+const H = 98;
+const padTop = 22;
+const padBottom = 26;
 
 const geom = computed(() => {
-  const vals = props.data.map((d) => d.v)
-  const min = Math.min(...vals)
-  const max = Math.max(...vals)
-  const range = max - min || 1
-  const step = (W - 24) / (props.data.length - 1)
-  const pts = props.data.map((d, i) => {
-    const x = 12 + i * step
-    const y = padTop + (1 - (d.v - min) / range) * (H - padTop - padBottom)
-    return [Math.round(x), Math.round(y)]
-  })
-  const line = pts.map((p) => p.join(',')).join(' ')
-  const area = `12,${H - padBottom} ${line} ${pts[pts.length - 1][0]},${H - padBottom}`
-  return { line, area, last: pts[pts.length - 1] }
-})
+  const vals = props.data.map((d) => d.v);
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const range = max - min || 1;
+  const step = (W - 24) / (props.data.length - 1);
+  const pts: [number, number][] = props.data.map((d, i) => {
+    const x = 12 + i * step;
+    const y = padTop + (1 - (d.v - min) / range) * (H - padTop - padBottom);
+    return [Math.round(x), Math.round(y)];
+  });
+  const line = pts.map((p) => p.join(",")).join(" ");
+  const last = pts[pts.length - 1];
+  const area = `12,${H - padBottom} ${line} ${last[0]},${H - padBottom}`;
+  return { line, area, last };
+});
 </script>
 
 <template>

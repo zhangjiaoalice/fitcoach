@@ -1,14 +1,21 @@
-<script setup>
+<script setup lang="ts">
 // 线性图标库。用法：<Icon name="home" :size="20" color="#10b981" />
 // stroke 统一用 currentColor 或传入 color，风格一致。
-defineProps({
-  name: { type: String, required: true },
-  size: { type: [Number, String], default: 20 },
-  color: { type: String, default: 'currentColor' },
-  width: { type: Number, default: 2 },
-})
 
-const paths = {
+interface Props {
+  name: string;
+  size?: number | string;
+  color?: string;
+  width?: number;
+}
+
+withDefaults(defineProps<Props>(), {
+  size: 20,
+  color: "currentColor",
+  width: 2,
+});
+
+const paths: Record<string, string> = {
   check: '<path d="M20 6L9 17l-5-5"/>',
   spinner: '<circle cx="12" cy="12" r="9" opacity=".3"/><path d="M12 3a9 9 0 0 1 9 9"/>',
   doc: '<path d="M4 19V5a2 2 0 0 1 2-2h9l5 5v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M9 8h4M9 12h6M9 16h6"/>',
@@ -25,7 +32,7 @@ const paths = {
   chat: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
   record: '<path d="M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/>',
   user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
-}
+};
 </script>
 
 <template>

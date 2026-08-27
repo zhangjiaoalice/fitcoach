@@ -1,14 +1,14 @@
-<script setup>
-import { computed } from 'vue'
-import { profile, dashboard } from '../api/mock.js'
-import Icon from '../components/Icon.vue'
-import TrendChart from '../components/TrendChart.vue'
+<script setup lang="ts">
+import { computed } from "vue";
+import { profile, dashboard } from "../api/mock";
+import Icon from "../components/Icon.vue";
+import TrendChart from "../components/TrendChart.vue";
 
-const rate = computed(() => Math.round((dashboard.workoutDone / dashboard.workoutPlanned) * 100))
-// 进度环：周长 = 2πr，r=34 → ≈214；offset = 周长 *(1 - 完成比)
-const R = 34
-const circ = Math.round(2 * Math.PI * R)
-const dashOffset = computed(() => Math.round(circ * (1 - dashboard.workoutDone / dashboard.workoutPlanned)))
+const rate = computed(() => Math.round((dashboard.workoutDone / dashboard.workoutPlanned) * 100));
+// 进度环：周长 = 2πr，r=34 → ≈214；offset = 周长 * (1 - 完成比)
+const R = 34;
+const circ = Math.round(2 * Math.PI * R);
+const dashOffset = computed(() => Math.round(circ * (1 - dashboard.workoutDone / dashboard.workoutPlanned)));
 </script>
 
 <template>

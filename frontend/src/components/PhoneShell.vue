@@ -1,18 +1,23 @@
-<script setup>
+<script setup lang="ts">
 // 手机外壳：顶部灵动条 + 内容区（router-view）+ 底部 tabbar。
-// 所有页面共用这个外壳，路由切换只换中间内容。
-import { useRoute, useRouter } from 'vue-router'
-import Icon from './Icon.vue'
+import { useRoute, useRouter } from "vue-router";
+import Icon from "./Icon.vue";
 
-const route = useRoute()
-const router = useRouter()
+interface Tab {
+  name: string;
+  label: string;
+  icon: string;
+}
 
-const tabs = [
-  { name: 'dashboard', label: '首页', icon: 'home' },
-  { name: 'chat', label: '教练', icon: 'chat' },
-  { name: 'diet', label: '记录', icon: 'record' },
-  { name: 'me', label: '我的', icon: 'user' },
-]
+const route = useRoute();
+const router = useRouter();
+
+const tabs: Tab[] = [
+  { name: "dashboard", label: "首页", icon: "home" },
+  { name: "chat", label: "教练", icon: "chat" },
+  { name: "diet", label: "记录", icon: "record" },
+  { name: "me", label: "我的", icon: "user" },
+];
 </script>
 
 <template>

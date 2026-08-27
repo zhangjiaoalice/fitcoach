@@ -1,5 +1,5 @@
-<script setup>
-import PhoneShell from './components/PhoneShell.vue'
+<script setup lang="ts">
+import PhoneShell from "./components/PhoneShell.vue";
 </script>
 
 <template>

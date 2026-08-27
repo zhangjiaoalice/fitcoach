@@ -1,13 +1,28 @@
-<script setup>
-import { profile } from '../api/mock.js'
-import Icon from '../components/Icon.vue'
+<script setup lang="ts">
+import { useRouter } from "vue-router";
+import { profile } from "../api/mock";
+import Icon from "../components/Icon.vue";
+import { clearToken } from "../api/client";
 
-const items = [
-  { icon: 'user', label: '个人画像', desc: '身高体重、目标、饮食偏好' },
-  { icon: 'record', label: '计划中心', desc: '查看与调整每周计划' },
-  { icon: 'doc', label: '健身知识库', desc: 'RAG 知识问答来源' },
-  { icon: 'spinner', label: 'Agent Trace', desc: '工具调用与执行链路' },
-]
+interface MenuItem {
+  icon: string;
+  label: string;
+  desc: string;
+}
+
+const items: MenuItem[] = [
+  { icon: "user", label: "个人画像", desc: "身高体重、目标、饮食偏好" },
+  { icon: "record", label: "计划中心", desc: "查看与调整每周计划" },
+  { icon: "doc", label: "健身知识库", desc: "RAG 知识问答来源" },
+  { icon: "spinner", label: "Agent Trace", desc: "工具调用与执行链路" },
+];
+
+const router = useRouter();
+
+function logout(): void {
+  clearToken();
+  router.push({ name: "login" });
+}
 </script>
 
 <template>
@@ -24,6 +39,8 @@ const items = [
     <div class="tx">{{ it.label }}<small>{{ it.desc }}</small></div>
     <span class="arrow">›</span>
   </div>
+
+  <button class="logout" @click="logout">退出登录</button>
 </template>
 
 <style scoped>
@@ -36,4 +53,16 @@ const items = [
 .tx { flex: 1; font-size: 13px; color: var(--text-1); }
 .tx small { display: block; color: var(--text-4); font-size: 11px; margin-top: 2px; }
 .arrow { color: var(--text-4); font-size: 18px; }
+.logout {
+  margin-top: 20px;
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-3);
+  border: 1px solid var(--hairline);
+  font-size: 13px;
+  cursor: pointer;
+}
+.logout:hover { color: var(--text-1); background: rgba(255, 255, 255, 0.08); }
 </style>

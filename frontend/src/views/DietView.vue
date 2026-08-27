@@ -1,12 +1,13 @@
-<script setup>
-import { computed } from 'vue'
-import { profile, dietLogs } from '../api/mock.js'
-import Icon from '../components/Icon.vue'
+<script setup lang="ts">
+import { computed } from "vue";
+import { profile, dietLogs } from "../api/mock";
+import Icon from "../components/Icon.vue";
 
-const total = computed(() => dietLogs.reduce((s, d) => s + d.kcal, 0))
-function analyze() {
+const total = computed(() => dietLogs.reduce((s, d) => s + d.kcal, 0));
+
+function analyze(): void {
   // 后端 M5 的 analyze_diet_log 工具就绪后，这里改成调用 /api/agent 触发分析
-  alert('（示例）将调用 AI 分析今日摄入')
+  alert("（示例）将调用 AI 分析今日摄入");
 }
 </script>
 

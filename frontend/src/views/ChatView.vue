@@ -1,6 +1,6 @@
-<script setup>
-import { profile, chatThread } from '../api/mock.js'
-import Icon from '../components/Icon.vue'
+<script setup lang="ts">
+import { profile, chatThread } from "../api/mock";
+import Icon from "../components/Icon.vue";
 </script>
 
 <template>
