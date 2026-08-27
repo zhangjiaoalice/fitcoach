@@ -7,7 +7,7 @@ from datetime import date
 from app.agent.tools.base import Tool, AgentContext, register_tool
 from app.services import workout_log_service
 
-async def _handler(arguments: Any, ctx: AgentContext) -> list[str, Any]:
+async def _handler(arguments: Any, ctx: AgentContext) -> dict[str, Any]:
     """
     arguments: LLM 传的参数
     ctx: Agent 上下文，包含 db 和 current_user
@@ -22,8 +22,8 @@ async def _handler(arguments: Any, ctx: AgentContext) -> list[str, Any]:
             {
                 "workout_type": log.workout_type,
                 "duration_min": log.duration_min,
-                "intensity": log.intensity if log.intensity is not None else None,
-                "note": log.note if log.note is not None else None,
+                "intensity": log.intensity,
+                "note": log.note,
             } for log in workout_logs
         ]
     }
@@ -36,9 +36,10 @@ query_workout_by_date = Tool(
         "properties": {
             "log_date": {
                 "type": "string",
-                "format": "date",
+                "description": "查询日期， YYYY-MM-DD 格式，如 2026-08-26，如果用户没有指定日期，则使用今天"
             },
         },
+        "required": ["log_date"]
     },
     handler=_handler,
 )

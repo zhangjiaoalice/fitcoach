@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from datetime import date
+from datetime import date, timedelta
 from typing import List
 
 from app.models.weight_log import WeightLog
@@ -43,3 +43,15 @@ async def delete_weight_log(db: AsyncSession, user_id: int, weight_log_id: int):
         raise ValueError("未找到体重记录日志")
     await db.delete(weight_log)
     await db.commit()
+
+
+async def list_weight_recent(db: AsyncSession, user_id: int, days: int) -> list[WeightLog]:
+    """查询最近N天的体重记录，按日期倒序（最新的在前）"""
+    since = date.today() - timedelta(days=days)
+    stmt = (
+        select(WeightLog)
+        .where(WeightLog.user_id == user_id, WeightLog.log_date >= since)
+        .order_by(WeightLog.log_date.desc())
+    )
+    result = await db.execute(stmt)
+    return list(result.scalars().all())
