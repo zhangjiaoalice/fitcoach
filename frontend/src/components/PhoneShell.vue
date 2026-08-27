@@ -1,5 +1,7 @@
 <script setup lang="ts">
 // 手机外壳：顶部灵动条 + 内容区（router-view）+ 底部 tabbar。
+// 二级页面（如 /chat）通过 route.meta.hideTabbar 隐藏底部导航。
+import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Icon from "./Icon.vue";
 
@@ -12,22 +14,24 @@ interface Tab {
 const route = useRoute();
 const router = useRouter();
 
+// 教练不再作为一级 tab，从此处去掉
 const tabs: Tab[] = [
   { name: "dashboard", label: "首页", icon: "home" },
-  { name: "chat", label: "教练", icon: "chat" },
   { name: "diet", label: "记录", icon: "record" },
   { name: "me", label: "我的", icon: "user" },
 ];
+
+const showTabbar = computed(() => !route.meta?.hideTabbar);
 </script>
 
 <template>
   <div class="wrap">
     <div class="screen">
       <div class="notch"><i /></div>
-      <div class="content">
+      <div class="content" :class="{ 'no-tabbar': !showTabbar }">
         <router-view />
       </div>
-      <nav class="tabbar">
+      <nav v-if="showTabbar" class="tabbar">
         <button
           v-for="t in tabs"
           :key="t.name"
@@ -76,6 +80,10 @@ const tabs: Tab[] = [
   flex: 1;
   overflow-y: auto;
   padding: 2px 18px 84px;
+}
+/* 无 tabbar 页面（如 /chat）不留底部 padding */
+.content.no-tabbar {
+  padding: 2px 18px 0;
 }
 .tabbar {
   position: absolute;

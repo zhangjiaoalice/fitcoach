@@ -20,6 +20,7 @@ const routes: RouteRecordRaw[] = [
     path: "/chat",
     name: "chat",
     component: () => import("./views/ChatView.vue"),
+    meta: { hideTabbar: true }, // 教练是二级页面，不显示底部 tabbar
   },
   {
     path: "/diet",

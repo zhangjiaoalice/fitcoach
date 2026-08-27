@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { useRouter } from "vue-router";
 import { profile, dashboard } from "../api/mock";
 import Icon from "../components/Icon.vue";
 import TrendChart from "../components/TrendChart.vue";
@@ -9,6 +10,11 @@ const rate = computed(() => Math.round((dashboard.workoutDone / dashboard.workou
 const R = 34;
 const circ = Math.round(2 * Math.PI * R);
 const dashOffset = computed(() => Math.round(circ * (1 - dashboard.workoutDone / dashboard.workoutPlanned)));
+
+const router = useRouter();
+function goChat(): void {
+  router.push({ name: "chat" });
+}
 </script>
 
 <template>
@@ -61,13 +67,14 @@ const dashOffset = computed(() => Math.round(circ * (1 - dashboard.workoutDone /
     </div>
   </div>
 
-  <div class="card tip">
+  <button class="card tip" @click="goChat">
     <span class="tip-ic"><Icon name="star" :size="16" color="var(--on-brand)" :width="2.2" /></span>
-    <div>
-      <p class="tip-label">AI 今日建议</p>
+    <div class="tip-body">
+      <p class="tip-label">AI 教练 · 今日建议</p>
       <p class="tip-text">{{ dashboard.aiTip }}</p>
     </div>
-  </div>
+    <span class="tip-arrow">›</span>
+  </button>
 </template>
 
 <style scoped>
@@ -88,8 +95,22 @@ const dashOffset = computed(() => Math.round(circ * (1 - dashboard.workoutDone /
 .card-head { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 13px; font-weight: 500; }
 .muted { color: var(--text-4); font-weight: 400; font-size: 11px; }
 .axis { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-4); margin-top: 6px; }
-.tip { background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.22); display: flex; gap: 12px; }
+.tip {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 12px;
+}
+.tip:hover { background: rgba(16, 185, 129, 0.12); }
+.tip-body { flex: 1; }
 .tip-ic { width: 32px; height: 32px; border-radius: 10px; background: var(--brand-grad); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .tip-label { font-size: 12px; color: var(--brand-bright); }
 .tip-text { margin-top: 5px; font-size: 13px; line-height: 1.5; color: var(--text-2); }
+.tip-arrow { color: var(--brand-bright); font-size: 20px; flex-shrink: 0; }
 </style>
