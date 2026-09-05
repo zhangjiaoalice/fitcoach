@@ -9,10 +9,12 @@ alembic==1.14.0           # 数据库迁移
 
 # === 配置与校验 ===
 pydantic==2.10.4
+pydantic[email]           # EmailStr 需要，触发 email-validator 安装
 pydantic-settings==2.7.0  # 从 .env 读配置
 
 # === 认证 (M1 用) ===
 passlib[bcrypt]==1.7.4    # 密码哈希
+bcrypt==4.0.1             # 锁定：passlib 1.7.4 与 bcrypt 4.1+ 不兼容会报 "password cannot be longer than 72 bytes"
 pyjwt==2.10.1             # JWT 签发/校验
 python-multipart==0.0.20  # 表单/文件
 

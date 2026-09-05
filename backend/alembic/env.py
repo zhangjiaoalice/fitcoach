@@ -14,8 +14,8 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-from app.core.config import get_settings
-from app.db.session import Base
+from app.core.config import get_settings # noqa: F401
+from app.db.session import Base # noqa: F401
 # 关键：这里必须 import 每个模型，Base.metadata 才会包含它们。
 # 以后新增模型（M2 的 profile、M3 的 diet_logs...）都要在这里加一行 import。
 from app.models.user import User  # noqa: F401
