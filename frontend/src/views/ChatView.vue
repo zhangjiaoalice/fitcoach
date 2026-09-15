@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref } from "vue";
+import { nextTick, onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import Icon from "../components/Icon.vue";
@@ -66,6 +66,56 @@ const scrollRef = ref<HTMLElement | null>(null);
 
 let nextId = 1;
 
+// ─────────────────────────────────────────────
+// 打字机平滑层
+//   Kimi 每帧 delta 是 5-20 字/帧,直接 append 会看到"顿一下、蹦几个字"
+//   平滑做法:把 delta 拆成单字塞进队列,定时器每 TICK_MS 抽 1 字追加到气泡
+// ─────────────────────────────────────────────
+const TYPING_TICK_MS = 25; // 每 25ms 打 1 字 ≈ 40 字/秒,接近人类阅读速度
+let pendingChars: string[] = [];
+let typingTimer: number | null = null;
+let streamEnded = false; // 后端 SSE 是否已推完(done/error 到达)
+let currentAiMsg: AssistantMessage | null = null;
+
+function enqueueChars(chunk: string): void {
+  // Array.from 正确切割 emoji / 中文(不像 split('') 会拆坏代理对)
+  pendingChars.push(...Array.from(chunk));
+  startTyping();
+}
+
+function startTyping(): void {
+  if (typingTimer !== null) return;
+  typingTimer = window.setInterval(tickTyping, TYPING_TICK_MS);
+}
+
+function tickTyping(): void {
+  const msg = currentAiMsg;
+  if (!msg) {
+    stopTyping();
+    return;
+  }
+  // 一次抽一个字追加
+  const ch = pendingChars.shift();
+  if (ch !== undefined) {
+    msg.text += ch;
+    void nextTick(scrollToBottom);
+    return;
+  }
+  // 队列空了 —— 如果 SSE 也结束了,才真正停打字
+  if (streamEnded) {
+    msg.streaming = false;
+    stopTyping();
+  }
+  // 否则等下一个 delta 到来,继续 tick(定时器保持运行,空转即可)
+}
+
+function stopTyping(): void {
+  if (typingTimer !== null) {
+    window.clearInterval(typingTimer);
+    typingTimer = null;
+  }
+}
+
 function pushMessage(msg: ChatMessage): AssistantMessage | UserMessage | ErrorMessage {
   messages.value.push(msg);
   void nextTick(scrollToBottom);
@@ -87,8 +137,9 @@ async function handleSend(): Promise<void> {
   sending.value = true;
 
   // 2. 预先 push 一条空 assistant 消息作为流式渲染的载体
-  //    后续 delta / tool_start / tool_result / done 事件都往它上面打
-  const aiMsg: AssistantMessage = {
+  //    push 之后必须从 messages.value 里拿回 proxy 版本 —— 直接改原始对象
+  //    不走 Vue reactive setter, 视图不会更新。
+  const aiMsgRaw: AssistantMessage = {
     id: nextId++,
     type: "assistant",
     text: "",
@@ -96,7 +147,15 @@ async function handleSend(): Promise<void> {
     iterations: 0,
     streaming: true,
   };
-  pushMessage(aiMsg);
+  messages.value.push(aiMsgRaw);
+  void nextTick(scrollToBottom);
+  // 拿回 reactive proxy —— 后续所有 mutation 都走它,才会触发视图更新
+  const aiMsg = messages.value[messages.value.length - 1] as AssistantMessage;
+
+  // 重置打字机状态,绑定到当前这条 AI 消息
+  pendingChars = [];
+  streamEnded = false;
+  currentAiMsg = aiMsg;
 
   try {
     await chatStream({
@@ -104,9 +163,8 @@ async function handleSend(): Promise<void> {
       onEvent: (event) => {
         switch (event.type) {
           case "delta":
-            // 追加字符 → Vue 响应式自动更新气泡
-            aiMsg.text += event.content;
-            void nextTick(scrollToBottom);
+            // 不直接写 aiMsg.text,塞进打字机队列 → 定时器逐字追加
+            enqueueChars(event.content);
             break;
 
           case "tool_start":
@@ -133,12 +191,15 @@ async function handleSend(): Promise<void> {
 
           case "done":
             aiMsg.iterations = event.iterations;
-            aiMsg.streaming = false;
-            void nextTick(scrollToBottom);
+            // 标记 SSE 已结束 —— 队列打完后 tickTyping 会自然停下并清光标
+            streamEnded = true;
+            // 如果队列已空,tick 会在下一次触发时收尾;若已停(队列曾空过),这里主动重启一下
+            startTyping();
             break;
 
           case "error":
-            aiMsg.streaming = false;
+            streamEnded = true;
+            startTyping();
             pushMessage({
               id: nextId++,
               type: "error",
@@ -149,12 +210,13 @@ async function handleSend(): Promise<void> {
       },
     });
   } catch (err) {
-    aiMsg.streaming = false;
+    streamEnded = true;
+    startTyping();
     const detail = err instanceof ApiError ? err.message : "网络异常，请稍后再试";
     pushMessage({ id: nextId++, type: "error", text: detail });
   } finally {
     sending.value = false;
-    aiMsg.streaming = false;
+    // 注意:不在这里 stopTyping / streaming=false,让打字机自然消化队列
   }
 }
 
@@ -181,6 +243,7 @@ function toolStatusLabel(status: ToolCallTrace["status"]): string {
 }
 
 onMounted(scrollToBottom);
+onUnmounted(stopTyping);
 </script>
 
 <template>
