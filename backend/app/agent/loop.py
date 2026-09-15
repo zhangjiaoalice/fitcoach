@@ -185,8 +185,18 @@ async def run_agent_stream(
 
         # 情况2: LLM 调用工具
         assistant_msg: dict = {"role": "assistant", "content": content_buf or None}
+        # OpenAI/Moonshot 规范：tool_calls 每项必须是
+        # {"id": "...", "type": "function", "function": {"name": "...", "arguments": "<json str>"}}
+        # 少了 type/function 嵌套，服务端会报 "tokenization failed"
         assistant_msg["tool_calls"] = [
-            {"id": slot["id"], "name": slot["name"], "arguments": slot["arguments"]}
+            {
+                "id": slot["id"],
+                "type": "function",
+                "function": {
+                    "name": slot["name"],
+                    "arguments": slot["arguments"],  # 保持 JSON 字符串，不要 loads
+                },
+            }
             for slot in tool_calls_buf.values()
         ]
         messages.append(assistant_msg)

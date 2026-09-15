@@ -3,9 +3,12 @@ Moonshot / Kimi 客户端
 封装对 /v1/chat/completions 接口的调用，把 message + tools 丢进去，拿回响应json
 """
 import httpx
+import logging
 from app.core.config import get_settings
 from typing import AsyncGenerator
 import json
+
+logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
@@ -43,11 +46,18 @@ async def chat_completion(messages: list[dict], tools: list[dict] | None = None)
     # timeout: LLM 的调用可能很慢， httpx 默认5s，一超时就认为api挂了，给LLM 调用留够时间
     async with httpx.AsyncClient(timeout=60.0) as client:
         response = await client.post(url, headers=headers, json=payload)
-        # 4xx/5xx 时先把 Moonshot 的错误 body 完整打出来（临时调试用，跑通后删除）
+        # 4xx/5xx 时先把 Moonshot 的错误 body 完整打出来，方便排错
         if response.status_code >= 400:
-            print(f"[Moonshot {response.status_code}] {response.text}")
-            print(f"[Moonshot 发送的 payload keys] {list(payload.keys())}")
-            print(f"[Moonshot model] {payload.get('model')}")
+            logger.error(
+                "[Moonshot %s] %s | model=%s | payload_keys=%s | "
+                "messages_roles=%s | tools_provided=%s",
+                response.status_code,
+                response.text,
+                payload.get("model"),
+                list(payload.keys()),
+                [m.get("role") for m in messages],
+                bool(tools),
+            )
         # 检查响应 response.raise_for_status() 会在4xx/5xx 时抛出异常，方便排错
         response.raise_for_status()
         # 返回解析后的dict
@@ -82,7 +92,15 @@ async def chat_completion_stream(messages: list[dict], tools: list[dict] | None 
             # 4xx/5xx 时打印 moonshot 的真实错误，方便排错
             if response.status_code >= 400:
                 body = await response.aread()
-                print(f"[Moonshoot stream {response.status_code}] {body.decode('utf-8', errors='ignore')}")
+                logger.error(
+                    "[Moonshot stream %s] %s | model=%s | "
+                    "messages_roles=%s | tools_provided=%s",
+                    response.status_code,
+                    body.decode("utf-8", errors="ignore"),
+                    payload.get("model"),
+                    [m.get("role") for m in messages],
+                    bool(tools),
+                )
             response.raise_for_status()
 
             # 逐行读 SSE 事件

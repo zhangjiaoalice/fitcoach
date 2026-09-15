@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     # Moonshot
     moonshot_api_key: str = ""
     moonshot_base_url: str = "https://api.moonshot.cn/v1"
-    moonshot_model: str = "moonshot-v1-8k"
+    moonshot_model: str = "kimi-k3"
 
 
 @lru_cache
