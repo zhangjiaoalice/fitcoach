@@ -3,9 +3,8 @@ import { nextTick, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import Icon from "../components/Icon.vue";
-import { chat } from "../api/agent";
+import { chatStream } from "../api/agent";
 import { ApiError } from "../api/client";
-import type { AgentToolCall } from "../api/types";
 
 const router = useRouter();
 
@@ -17,7 +16,7 @@ function goBack(): void {
 /**
  * 对话消息 —— 三种类型：
  *   - user      用户气泡
- *   - assistant AI 气泡（可能带工具调用记录）
+ *   - assistant AI 气泡（可能带工具调用记录），文本会随 SSE delta 逐步增长
  *   - error     错误提示
  */
 interface UserMessage {
@@ -26,12 +25,20 @@ interface UserMessage {
   text: string;
 }
 
+interface ToolCallTrace {
+  name: string;
+  arguments: Record<string, unknown>;
+  status: "running" | "done" | "error";
+  result?: Record<string, unknown>;
+}
+
 interface AssistantMessage {
   id: number;
   type: "assistant";
   text: string;
-  toolCalls: AgentToolCall[];
+  toolCalls: ToolCallTrace[];
   iterations: number;
+  streaming: boolean; // true 时显示光标 / 打字中
 }
 
 interface ErrorMessage {
@@ -49,6 +56,7 @@ const messages = ref<ChatMessage[]>([
     text: "你好，我是你的 FitCoach AI 教练。可以问我：\n\n· 我的画像是什么？\n· 帮我推荐一份适合减脂的午餐\n· 我最近一周体重变化怎样？",
     toolCalls: [],
     iterations: 0,
+    streaming: false,
   },
 ]);
 
@@ -58,9 +66,10 @@ const scrollRef = ref<HTMLElement | null>(null);
 
 let nextId = 1;
 
-function pushMessage(msg: ChatMessage): void {
+function pushMessage(msg: ChatMessage): AssistantMessage | UserMessage | ErrorMessage {
   messages.value.push(msg);
   void nextTick(scrollToBottom);
+  return msg;
 }
 
 function scrollToBottom(): void {
@@ -72,27 +81,80 @@ async function handleSend(): Promise<void> {
   const text = inputText.value.trim();
   if (!text || sending.value) return;
 
-  // 1. 先把用户消息落到视图
+  // 1. 用户消息落到视图
   pushMessage({ id: nextId++, type: "user", text });
   inputText.value = "";
   sending.value = true;
 
+  // 2. 预先 push 一条空 assistant 消息作为流式渲染的载体
+  //    后续 delta / tool_start / tool_result / done 事件都往它上面打
+  const aiMsg: AssistantMessage = {
+    id: nextId++,
+    type: "assistant",
+    text: "",
+    toolCalls: [],
+    iterations: 0,
+    streaming: true,
+  };
+  pushMessage(aiMsg);
+
   try {
-    // 2. 调后端 Agent Loop
-    const resp = await chat({ message: text });
-    // 3. 落 AI 消息（包含工具调用轨迹）
-    pushMessage({
-      id: nextId++,
-      type: "assistant",
-      text: resp.reply,
-      toolCalls: resp.tool_calls,
-      iterations: resp.iterations,
+    await chatStream({
+      message: text,
+      onEvent: (event) => {
+        switch (event.type) {
+          case "delta":
+            // 追加字符 → Vue 响应式自动更新气泡
+            aiMsg.text += event.content;
+            void nextTick(scrollToBottom);
+            break;
+
+          case "tool_start":
+            aiMsg.toolCalls.push({
+              name: event.name,
+              arguments: event.arguments,
+              status: "running",
+            });
+            void nextTick(scrollToBottom);
+            break;
+
+          case "tool_result": {
+            // 找最后一个同名 running 的卡片，改成 done
+            for (let i = aiMsg.toolCalls.length - 1; i >= 0; i--) {
+              const tc = aiMsg.toolCalls[i];
+              if (tc.name === event.name && tc.status === "running") {
+                tc.status = "done";
+                tc.result = event.result;
+                break;
+              }
+            }
+            break;
+          }
+
+          case "done":
+            aiMsg.iterations = event.iterations;
+            aiMsg.streaming = false;
+            void nextTick(scrollToBottom);
+            break;
+
+          case "error":
+            aiMsg.streaming = false;
+            pushMessage({
+              id: nextId++,
+              type: "error",
+              text: event.message,
+            });
+            break;
+        }
+      },
     });
   } catch (err) {
+    aiMsg.streaming = false;
     const detail = err instanceof ApiError ? err.message : "网络异常，请稍后再试";
     pushMessage({ id: nextId++, type: "error", text: detail });
   } finally {
     sending.value = false;
+    aiMsg.streaming = false;
   }
 }
 
@@ -112,6 +174,10 @@ function toolLabel(name: string): string {
     query_weight_trend: "查询体重趋势",
   };
   return map[name] ?? name;
+}
+
+function toolStatusLabel(status: ToolCallTrace["status"]): string {
+  return status === "running" ? "进行中" : status === "done" ? "完成" : "失败";
 }
 
 onMounted(scrollToBottom);
@@ -144,9 +210,12 @@ onMounted(scrollToBottom);
               <Icon :name="toolIcon(tc.name)" :size="14" color="var(--brand)" :width="2.2" />
             </span>
             <span>{{ toolLabel(tc.name) }}</span>
-            <span class="st">完成</span>
+            <span class="st" :class="tc.status">{{ toolStatusLabel(tc.status) }}</span>
           </div>
-          <div class="bub ba">{{ m.text }}</div>
+          <!-- 空文本 + 未流式结束时不渲染气泡（避免闪一个空 bubble） -->
+          <div v-if="m.text || !m.streaming" class="bub ba">
+            <span>{{ m.text }}</span><span v-if="m.streaming" class="cursor" />
+          </div>
         </template>
 
         <!-- 错误提示 -->
@@ -156,8 +225,8 @@ onMounted(scrollToBottom);
         </div>
       </template>
 
-      <!-- 正在生成 -->
-      <div v-if="sending" class="typing">
+      <!-- 正在生成（LLM 还没出第一个 token 时，先显示三点动画） -->
+      <div v-if="sending && messages[messages.length - 1]?.type === 'assistant' && !(messages[messages.length - 1] as AssistantMessage).text && (messages[messages.length - 1] as AssistantMessage).toolCalls.length === 0" class="typing">
         <span class="dot" />
         <span class="dot" />
         <span class="dot" />
@@ -263,8 +332,25 @@ onMounted(scrollToBottom);
 }
 .ic.brand { background: rgba(16, 185, 129, 0.14); }
 .ic.warn { background: rgba(234, 179, 8, 0.18); }
-.tool .st { margin-left: auto; font-size: 11px; color: var(--brand-bright); }
+.tool .st { margin-left: auto; font-size: 11px; color: var(--text-3); }
+.tool .st.running { color: var(--brand-bright); }
+.tool .st.done    { color: var(--brand-bright); }
+.tool .st.error   { color: var(--warn); }
 .risk { background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.25); }
+
+/* 流式光标 —— 追在气泡最后一个字后面闪 */
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 14px;
+  vertical-align: -3px;
+  margin-left: 2px;
+  background: var(--brand-bright);
+  animation: blink 1s steps(2) infinite;
+}
+@keyframes blink {
+  50% { opacity: 0; }
+}
 
 /* 三点打字动画 */
 .typing {

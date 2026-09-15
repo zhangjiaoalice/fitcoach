@@ -125,3 +125,43 @@ export interface ChatOut {
   iterations: number;
   tool_calls: AgentToolCall[];
 }
+
+// ─────────────────────────────────────────────
+// Agent 流式对话事件 (对应 M7)
+// 与 backend/app/agent/loop.py 里 run_agent_stream yield 的 event 一一对应
+// ─────────────────────────────────────────────
+export interface StreamDeltaEvent {
+  type: "delta";
+  content: string;
+}
+
+export interface StreamToolStartEvent {
+  type: "tool_start";
+  name: string;
+  arguments: Record<string, unknown>;
+}
+
+export interface StreamToolResultEvent {
+  type: "tool_result";
+  name: string;
+  result: Record<string, unknown>;
+}
+
+export interface StreamDoneEvent {
+  type: "done";
+  reply: string;
+  iterations: number;
+  tool_calls: AgentToolCall[];
+}
+
+export interface StreamErrorEvent {
+  type: "error";
+  message: string;
+}
+
+export type AgentStreamEvent =
+  | StreamDeltaEvent
+  | StreamToolStartEvent
+  | StreamToolResultEvent
+  | StreamDoneEvent
+  | StreamErrorEvent;
