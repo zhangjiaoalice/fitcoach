@@ -2,6 +2,7 @@
 
 declare module "*.vue" {
   import type { DefineComponent } from "vue";
-  const component: DefineComponent<Record<string, unknown>, Record<string, unknown>, unknown>;
+  // 官方推荐写法：三个 any 让 props/emits 由组件自身推导
+  const component: DefineComponent<{}, {}, any>;
   export default component;
 }
