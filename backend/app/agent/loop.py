@@ -8,6 +8,7 @@ Agent Loop - 核心对话循环
 """
 
 import json
+from datetime import date
 from typing import AsyncGenerator
 
 import app.agent.tools
@@ -15,10 +16,27 @@ import app.agent.tools
 from app.agent.moonshot_client import chat_completion, chat_completion_stream
 from app.agent.tools.base import AgentContext, TOOL_REGISTRY
 
-SYSTEM_PROMPT = """你是 FitCoach 的健康教练助手。
-你可以调用工具查询用户的画像和记录数据。
-当用户询问个性化建议时，先调 query_user_profile 了解基本情况再回答。
-回答要具体、贴合用户的实际情况，不要给通用套话。"""
+
+def _build_system_prompt() -> str:
+    """
+    每次对话动态生成 system prompt。
+    关键: 注入今天日期,否则 LLM 不知道 "今天" 是什么日期(它按训练截止日期猜)。
+    """
+    today = date.today().isoformat()
+    weekday = ["一", "二", "三", "四", "五", "六", "日"][date.today().weekday()]
+    return f"""你是 FitCoach 的健康教练助手。
+今天是 {today}(星期{weekday})。当用户说"今天""昨天""上周"时,以此为准计算日期。
+
+你可以调用工具查询用户画像和记录数据,也可以帮用户记录饮食/训练/体重。
+- 用户询问个性化建议时,先调 query_user_profile 了解基本情况再回答
+- 用户说"帮我记 XXX""我今天吃了 XXX"时,调 log_diet/log_workout/log_weight
+- 记录时不要瞎编营养数据,用户没给的字段就让它空着
+
+回答要具体、贴合用户的实际情况,不要给通用套话。"""
+
+
+# 向后兼容: 旧代码里的 SYSTEM_PROMPT 常量仍可用(取当前时刻快照)
+SYSTEM_PROMPT = _build_system_prompt()
 
 async def run_agent(
         user_message: str,
@@ -37,7 +55,7 @@ async def run_agent(
 
     # 构造messages 存放对话历史
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": _build_system_prompt()},
         {"role": "user", "content": user_message}
     ]
 
@@ -117,7 +135,7 @@ async def run_agent_stream(
     """
 
     messages: list[dict] = [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": _build_system_prompt()},
         {"role": "user", "content": user_message}
     ]
 
