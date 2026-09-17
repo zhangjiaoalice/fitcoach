@@ -98,7 +98,8 @@ function tickTyping(): void {
   const ch = pendingChars.shift();
   if (ch !== undefined) {
     msg.text += ch;
-    void nextTick(scrollToBottom);
+    // 打字时用智能滚动:用户如果在往上翻,就不打扰
+    void nextTick(autoScrollIfNearBottom);
     return;
   }
   // 队列空了 —— 如果 SSE 也结束了,才真正停打字
@@ -124,7 +125,21 @@ function pushMessage(msg: ChatMessage): AssistantMessage | UserMessage | ErrorMe
 
 function scrollToBottom(): void {
   const el = scrollRef.value;
-  if (el) el.scrollTop = el.scrollHeight;
+  if (!el) return;
+  el.scrollTop = el.scrollHeight;
+}
+
+/**
+ * 智能滚动: 用户如果没主动往上翻(距离底部 < 60px),自动跟着新内容滚到底
+ * 用户主动往上翻回看历史,就别打扰他
+ */
+function autoScrollIfNearBottom(): void {
+  const el = scrollRef.value;
+  if (!el) return;
+  const distanceToBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+  if (distanceToBottom < 60) {
+    el.scrollTop = el.scrollHeight;
+  }
 }
 
 async function handleSend(): Promise<void> {
@@ -173,7 +188,7 @@ async function handleSend(): Promise<void> {
               arguments: event.arguments,
               status: "running",
             });
-            void nextTick(scrollToBottom);
+            void nextTick(autoScrollIfNearBottom);
             break;
 
           case "tool_result": {
@@ -315,9 +330,9 @@ onUnmounted(stopTyping);
 .chat-page {
   display: flex;
   flex-direction: column;
-  /* 减去 PhoneShell 的 notch 28 */
-  min-height: calc(100vh - 28px);
-  padding-bottom: 64px; /* 输入框高度 + 一点余量 */
+  /* 关键: 用 height 而非 min-height,才能约束 flex 子项的滚动区域 */
+  height: calc(100vh - 28px); /* 减去 PhoneShell 的 notch 28 */
+  overflow: hidden;             /* 页面本身不滚,内部 .msgs 滚 */
 }
 
 .hd {
@@ -325,6 +340,7 @@ onUnmounted(stopTyping);
   align-items: center;
   gap: 10px;
   padding: 4px 0 14px;
+  flex-shrink: 0;               /* header 不挤压 */
 }
 .back {
   width: 36px; height: 36px;
@@ -350,8 +366,9 @@ onUnmounted(stopTyping);
 
 .msgs {
   flex: 1;
+  min-height: 0;                    /* flex 子项拿到剩余高度 + auto 滚动的关键 */
   overflow-y: auto;
-  padding: 4px 0;
+  padding: 4px 0 72px;              /* 底部预留 composer 高度,消息不被挡 */
   -webkit-overflow-scrolling: touch;
 }
 
