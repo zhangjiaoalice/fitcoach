@@ -8,3 +8,5 @@ from app.agent.tools import query_diet_by_date # noqa: F401
 from app.agent.tools import query_workout_by_date # noqa: F401
 from app.agent.tools import query_weight_trend # noqa: F401
 from app.agent.tools import log_diet # noqa: F401
+from app.agent.tools import log_workout # noqa: F401
+from app.agent.tools import log_weight # noqa: F401

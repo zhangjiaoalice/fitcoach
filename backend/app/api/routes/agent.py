@@ -65,11 +65,11 @@ async def chat_stream(data: ChatIn, current_user: User=Depends(get_current_user)
     final_reply = ''
     final_iterations = 0
     final_tool_calls: list = []
-    error: str | None = None
+    final_error: str | None = None
 
     async def event_stream():
         # nonlocal 是python的一个关键字，用来在嵌套函数中修改外层函数的变量，而不是全局变量
-        nonlocal final_reply, final_iterations, final_tool_calls, error
+        nonlocal final_reply, final_iterations, final_tool_calls, final_error
 
         try:
             async for event in run_agent_stream(data.message, ctx):
