@@ -66,7 +66,7 @@ CRISIS_REPLY = """你的感受和安全比任何建议都重要。
 
 我会在这里陪你,你可以慢慢说。"""
 
-def __detect_crisis(message: str) -> bool:
+def _detect_crisis(message: str) -> bool:
     """粗筛查用户输入是否含明显危险信号"""
     return any(keyword in message for keyword in DANGEROUS_KEYWORDS)
 
@@ -85,7 +85,7 @@ async def run_agent(
     }
     """
 
-    if __detect_crisis(user_message):
+    if _detect_crisis(user_message):
         return {
             "reply": CRISIS_REPLY,
             "iterations": 0,
@@ -174,7 +174,7 @@ async def run_agent_stream(
     """
 
     # 前置粗筛危险信号
-    if __detect_crisis(user_message):
+    if _detect_crisis(user_message):
         # 逐字流出（为了打字效果一致）
         for ch in CRISIS_REPLY:
             yield {"type": "delta", "content": ch}
