@@ -117,7 +117,9 @@ function stopTyping(): void {
   }
 }
 
-function pushMessage(msg: ChatMessage): AssistantMessage | UserMessage | ErrorMessage {
+function pushMessage(
+  msg: ChatMessage
+): AssistantMessage | UserMessage | ErrorMessage {
   messages.value.push(msg);
   void nextTick(scrollToBottom);
   return msg;
@@ -227,7 +229,8 @@ async function handleSend(): Promise<void> {
   } catch (err) {
     streamEnded = true;
     startTyping();
-    const detail = err instanceof ApiError ? err.message : "网络异常，请稍后再试";
+    const detail =
+      err instanceof ApiError ? err.message : "网络异常，请稍后再试";
     pushMessage({ id: nextId++, type: "error", text: detail });
   } finally {
     sending.value = false;
@@ -265,7 +268,16 @@ onUnmounted(stopTyping);
   <div class="chat-page">
     <header class="hd">
       <button class="back" @click="goBack" aria-label="返回">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <svg
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <path d="M15 18l-6-6 6-6" />
         </svg>
       </button>
@@ -283,46 +295,65 @@ onUnmounted(stopTyping);
 
         <!-- AI 气泡（前面铺工具调用卡片） -->
         <template v-else-if="m.type === 'assistant'">
-          <div v-for="(tc, ti) in m.toolCalls" :key="`${m.id}-tc-${ti}`" class="tool glass">
+          <div
+            v-for="(tc, ti) in m.toolCalls"
+            :key="`${m.id}-tc-${ti}`"
+            class="tool glass"
+          >
             <span class="ic brand">
-              <Icon :name="toolIcon(tc.name)" :size="14" color="var(--brand)" :width="2.2" />
+              <Icon
+                :name="toolIcon(tc.name)"
+                :size="14"
+                color="var(--brand)"
+                :width="2.2"
+              />
             </span>
             <span>{{ toolLabel(tc.name) }}</span>
-            <span class="st" :class="tc.status">{{ toolStatusLabel(tc.status) }}</span>
+            <span class="st" :class="tc.status">{{
+              toolStatusLabel(tc.status)
+            }}</span>
           </div>
           <!-- 空文本 + 未流式结束时不渲染气泡（避免闪一个空 bubble） -->
           <div v-if="m.text || !m.streaming" class="bub ba">
-            <span>{{ m.text }}</span><span v-if="m.streaming" class="cursor" />
+            <span>{{ m.text }}</span
+            ><span v-if="m.streaming" class="cursor" />
           </div>
         </template>
 
         <!-- 错误提示 -->
         <div v-else class="tool risk">
-          <span class="ic warn"><Icon name="warn" :size="14" color="var(--warn)" :width="2.2" /></span>
+          <span class="ic warn"
+            ><Icon name="warn" :size="14" color="var(--warn)" :width="2.2"
+          /></span>
           <span style="color: var(--warn)">{{ m.text }}</span>
         </div>
       </template>
 
       <!-- 正在生成（LLM 还没出第一个 token 时，先显示三点动画） -->
-      <div v-if="sending && messages[messages.length - 1]?.type === 'assistant' && !(messages[messages.length - 1] as AssistantMessage).text && (messages[messages.length - 1] as AssistantMessage).toolCalls.length === 0" class="typing">
+      <div
+        v-if="sending && messages[messages.length - 1]?.type === 'assistant' && !(messages[messages.length - 1] as AssistantMessage).text && (messages[messages.length - 1] as AssistantMessage).toolCalls.length === 0"
+        class="typing"
+      >
         <span class="dot" />
         <span class="dot" />
         <span class="dot" />
       </div>
     </div>
 
-    <form class="composer" @submit.prevent="handleSend">
-      <input
-        v-model="inputText"
-        type="text"
-        placeholder="问点什么，比如'我今天该吃啥？'"
-        :disabled="sending"
-        autofocus
-      />
-      <button type="submit" :disabled="sending || !inputText.trim()">
-        <Icon name="check" :size="18" color="var(--on-brand)" :width="2.4" />
-      </button>
-    </form>
+    <div class="footer-btn">
+      <form class="composer" @submit.prevent="handleSend">
+        <input
+          v-model="inputText"
+          type="text"
+          placeholder="问点什么，比如'我今天该吃啥？'"
+          :disabled="sending"
+          autofocus
+        />
+        <button type="submit" :disabled="sending || !inputText.trim()">
+          <Icon name="check" :size="18" color="var(--on-brand)" :width="2.4" />
+        </button>
+      </form>
+    </div>
   </div>
 </template>
 
@@ -332,7 +363,7 @@ onUnmounted(stopTyping);
   flex-direction: column;
   /* 关键: 用 height 而非 min-height,才能约束 flex 子项的滚动区域 */
   height: calc(100vh - 28px); /* 减去 PhoneShell 的 notch 28 */
-  overflow: hidden;             /* 页面本身不滚,内部 .msgs 滚 */
+  overflow: hidden; /* 页面本身不滚,内部 .msgs 滚 */
 }
 
 .hd {
@@ -340,35 +371,56 @@ onUnmounted(stopTyping);
   align-items: center;
   gap: 10px;
   padding: 4px 0 14px;
-  flex-shrink: 0;               /* header 不挤压 */
+  flex-shrink: 0; /* header 不挤压 */
 }
 .back {
-  width: 36px; height: 36px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   border: 0;
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-1);
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
 }
-.back:hover { background: rgba(255, 255, 255, 0.09); }
-.title { flex: 1; }
-.title h1 { font-size: 18px; font-weight: 500; letter-spacing: -0.02em; }
-.title p { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+.back:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+.title {
+  flex: 1;
+}
+.title h1 {
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+.title p {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 2px;
+}
 .av {
-  width: 36px; height: 36px; border-radius: 50%;
-  background: var(--brand-grad); color: var(--on-brand);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 500;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--brand-grad);
+  color: var(--on-brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
   flex-shrink: 0;
 }
 
 .msgs {
   flex: 1;
-  min-height: 0;                    /* flex 子项拿到剩余高度 + auto 滚动的关键 */
+  min-height: 0; /* flex 子项拿到剩余高度 + auto 滚动的关键 */
   overflow-y: auto;
-  padding: 4px 0 72px;              /* 底部预留 composer 高度,消息不被挡 */
+  padding: 4px 0 72px; /* 底部预留 composer 高度,消息不被挡 */
   -webkit-overflow-scrolling: touch;
 }
 
@@ -406,17 +458,38 @@ onUnmounted(stopTyping);
   border-radius: 12px;
 }
 .tool .ic {
-  width: 26px; height: 26px; border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
-.ic.brand { background: rgba(16, 185, 129, 0.14); }
-.ic.warn { background: rgba(234, 179, 8, 0.18); }
-.tool .st { margin-left: auto; font-size: 11px; color: var(--text-3); }
-.tool .st.running { color: var(--brand-bright); }
-.tool .st.done    { color: var(--brand-bright); }
-.tool .st.error   { color: var(--warn); }
-.risk { background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.25); }
+.ic.brand {
+  background: rgba(16, 185, 129, 0.14);
+}
+.ic.warn {
+  background: rgba(234, 179, 8, 0.18);
+}
+.tool .st {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-3);
+}
+.tool .st.running {
+  color: var(--brand-bright);
+}
+.tool .st.done {
+  color: var(--brand-bright);
+}
+.tool .st.error {
+  color: var(--warn);
+}
+.risk {
+  background: rgba(234, 179, 8, 0.1);
+  border: 1px solid rgba(234, 179, 8, 0.25);
+}
 
 /* 流式光标 —— 追在气泡最后一个字后面闪 */
 .cursor {
@@ -429,7 +502,9 @@ onUnmounted(stopTyping);
   animation: blink 1s steps(2) infinite;
 }
 @keyframes blink {
-  50% { opacity: 0; }
+  50% {
+    opacity: 0;
+  }
 }
 
 /* 三点打字动画 */
@@ -444,15 +519,41 @@ onUnmounted(stopTyping);
   margin-bottom: 10px;
 }
 .typing .dot {
-  width: 6px; height: 6px; border-radius: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
   background: var(--text-3);
   animation: bounce 1.2s infinite ease-in-out;
 }
-.typing .dot:nth-child(2) { animation-delay: 0.15s; }
-.typing .dot:nth-child(3) { animation-delay: 0.3s; }
+.typing .dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.typing .dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
 @keyframes bounce {
-  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-  30% { transform: translateY(-4px); opacity: 1; }
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.footer-btn {
+  width: 100vw;
+  height: 80px;
+  padding: 12px 16px;
+  background: rgba(20, 25, 33, 0.92);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
 }
 
 /* 输入框 —— fixed 定位，贴屏幕底部，不跟随滚动 */
@@ -482,9 +583,12 @@ onUnmounted(stopTyping);
   font-size: 13px;
   outline: none;
 }
-.composer input::placeholder { color: var(--text-4); }
+.composer input::placeholder {
+  color: var(--text-4);
+}
 .composer button {
-  width: 38px; height: 38px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   border: 0;
   background: var(--brand-grad);
@@ -494,5 +598,9 @@ onUnmounted(stopTyping);
   justify-content: center;
   flex-shrink: 0;
 }
-.composer button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.composer button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 </style>
