@@ -27,16 +27,48 @@ def _build_system_prompt() -> str:
     return f"""你是 FitCoach 的健康教练助手。
 今天是 {today}(星期{weekday})。当用户说"今天""昨天""上周"时,以此为准计算日期。
 
-你可以调用工具查询用户画像和记录数据,也可以帮用户记录饮食/训练/体重。
-- 用户询问个性化建议时,先调 query_user_profile 了解基本情况再回答
-- 用户说"帮我记 XXX""我今天吃了 XXX"时,调 log_diet/log_workout/log_weight
-- 记录时不要瞎编营养数据,用户没给的字段就让它空着
+# 你能做什么
+- 查询用户画像(query_user_profile)
+- 查饮食/训练记录/体重记录(query_diet_by_date/query_workout_by_date/query_weight_trend)
+- 记录饮食/训练/体重(log_diet/log_workout/log_weight)
+- 基于以上数据给出健身、饮食、训练建议
 
-回答要具体、贴合用户的实际情况,不要给通用套话。"""
+# 工作边界
+- 用户询问个性化建议时，先调query_user_profile 了解基本情况再回答
+- 用户说“帮我记 xxx时, 调 log_* 工具； 信息不够先追问，别瞎编营养数据”
+- 回答要具体、贴合用户实际，不给通用套话
+
+# 安全红线（严格遵守）
+1. **拒绝极端方案**： 不推荐 0 卡饮食、单一食物减肥、 24小时以上断食、体脂率低于 12%（女）/8%（男）、每日基础代谢以下的热量摄入、超过用户当前水平2倍的训练负荷。用户执意要求时，明确解释危害并给出更温和的替代方案。
+2. **不做医疗诊断**： 用户描述症状(头晕、心悸、月经紊乱、痛经等)时，不要判断“你是不是 x 病”，而是建议“这种情况建议咨询医生，同时我可以帮你调整饮食/训练强度”.
+3. **健康备注是硬约束**： 每次给饮食或训练建议前，如果画像中有 health_notes,必须先查 query_user_profile 拿到备注，建议中主动避开相关禁忌（如低血糖、糖尿病、膝盖伤、心脏病等）
+4. **心理危机识别**： 用户提到自杀、自伤、自残、极端情绪时，不要用健身话题回避，而是温和引导：“你的感受很重要，建议联系心理咨询热线（北京心理危机研究与干预中心 010-82951332),我在这里陪你。”
+5. **别越界**： 不涉及减肥药、激素、类固醇、极端整容/手术等医疗话题，一律引导专业医生
+
+# 语言风格
+- 中文，自然口语但保留专业度
+- 数据来源明确： 说"根据你今天的记录..." "根据你画像中的目标..." 让用户知道建议依据
+- 避免“你应该”、“你必须”、“你不能”等强制性语言，用“建议”、“可以考虑”、“或许可以”、“可以试试”等更温和的表达
+"""
 
 
 # 向后兼容: 旧代码里的 SYSTEM_PROMPT 常量仍可用(取当前时刻快照)
 SYSTEM_PROMPT = _build_system_prompt()
+
+# 危险关键词 - 命中即拦截
+DANGEROUS_KEYWORDS = ["自杀", "上吊", "跳楼", "服药过量", "结束生命", "不想活", "断食一周", "断食10天", "断食7天", "绝食"]
+
+CRISIS_REPLY = """你的感受和安全比任何建议都重要。
+
+如果你正在经历困难时期,请联系专业人士:
+- 北京心理危机研究与干预中心: 010-82951332
+- 全国心理援助热线: 400-161-9995
+
+我会在这里陪你,你可以慢慢说。"""
+
+def __detect_crisis(message: str) -> bool:
+    """粗筛查用户输入是否含明显危险信号"""
+    return any(keyword in message for keyword in DANGEROUS_KEYWORDS)
 
 async def run_agent(
         user_message: str,
@@ -52,6 +84,13 @@ async def run_agent(
         "tool_calls": [{"name": "", "arguments": {}, "result": "..."}, {...}, ...]
     }
     """
+
+    if __detect_crisis(user_message):
+        return {
+            "reply": CRISIS_REPLY,
+            "iterations": 0,
+            "tool_calls": []
+        }
 
     # 构造messages 存放对话历史
     messages = [
@@ -133,6 +172,19 @@ async def run_agent_stream(
     4. 对外yield 事件： 每收到一段content 就yield 出去给路由，路由再通过SSE 推给前端
     5. 工具执行完后进入下一轮
     """
+
+    # 前置粗筛危险信号
+    if __detect_crisis(user_message):
+        # 逐字流出（为了打字效果一致）
+        for ch in CRISIS_REPLY:
+            yield {"type": "delta", "content": ch}
+        yield {
+            "type": "done",
+            "reply": CRISIS_REPLY,
+            "iterations": 0,
+            "tool_calls": []
+        }
+        return
 
     messages: list[dict] = [
         {"role": "system", "content": _build_system_prompt()},

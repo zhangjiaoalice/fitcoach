@@ -21,9 +21,17 @@ async def _handler(arguments: dict, ctx: AgentContext) -> dict[str, Any]:
             "error": "该用户不存在"
         }
 
+    # 构造 safety notice
+    health_notes = profile.health_notes
+    safety_notice = None
+
+    if health_notes:
+        safety_notice = f"⚠️用户有健康备注： {health_notes}。给出任何饮食/训练建议时必须先参考这些限制"
+
     # 将 ORM 对象转换成 JSON 可序列化的 dict
     # Decimal 要float() 才能JSON序列化
     return {
+        "_safety_notice": safety_notice, # 放在最前面，LLM 从上往下读优先看到
         "gender": profile.gender,
         "age": profile.age,
         "height_cm": profile.height_cm,
@@ -33,7 +41,7 @@ async def _handler(arguments: dict, ctx: AgentContext) -> dict[str, Any]:
         "training_days_per_week": profile.training_days_per_week,
         "diet_preference": profile.diet_preference,
         "health_notes": profile.health_notes,
-        "goal_description": profile.goal_description
+        "goal_description": profile.goal_description,
     }
 
 # 注册工具到全局
