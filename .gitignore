@@ -6,6 +6,8 @@ venv/
 .venv-old-workbuddy-base/
 .pytest_cache/
 .env
+.env.prod
+.env.local
 *.egg-info/
 
 # --- 前端 ---

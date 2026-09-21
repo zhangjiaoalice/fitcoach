@@ -1,0 +1,42 @@
+# Caddy 反代配置 - FitCoach 生产版(纯 IP,HTTP 模式)
+#
+# 监听: 容器内 :80 (compose 映射到宿主机 :8080)
+# 路由:
+#   /api/*   → backend:8000 (compose 内部服务名)
+#   /*       → 静态前端 (/srv,来自 frontend 镜像)
+#
+# 备案完域名后,把 :80 改成 你的域名 (Caddy 自动 HTTPS)
+
+:80 {
+    # ========== 后端 API 反代 ==========
+    handle /api/* {
+        # 关键: 保持 /api 前缀不去掉(FastAPI 路由本身不带 /api,由代理层加)
+        # 我们的 vite 开发时用 /api 代理到 8000,生产也保持这个约定
+        uri strip_prefix /api
+        reverse_proxy backend:8000 {
+            # SSE 关键: 关闭 flush_interval 缓冲,让流式数据实时透传
+            flush_interval -1
+            # 透传原始 host 和真实 IP
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # ========== 前端静态 (SPA) ==========
+    handle {
+        root * /srv
+        try_files {path} /index.html
+        file_server
+    }
+
+    # ========== 日志 ==========
+    log {
+        output stdout
+        format console
+        level INFO
+    }
+
+    # ========== 通用响应头 ==========
+    encode gzip
+}

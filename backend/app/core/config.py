@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     moonshot_base_url: str = "https://api.moonshot.cn/v1"
     moonshot_model: str = "kimi-k3"
 
+    # 智谱 Embedding (M8 RAG)
+    zhipu_api_key: str = ""
+    zhipu_embedding_model: str = "embedding-3"
+    zhipu_base_url: str = "https://open.bigmodel.cn/api/paas/v4"
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -1,0 +1,76 @@
+# FitCoach 生产编排 - 腾讯云 CVM 上跑
+#
+# 部署命令(在服务器上):
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# 端口设计(纯 IP + 未备案):
+#   宿主机 8080 -> Caddy(反代) -> {前端静态 + /api → backend}
+#   宿主机不直接暴露 backend:8000 和 db:5432
+#
+# 访问方式: http://你的公网IP:8080
+
+services:
+  # ============================================================
+  # 数据库: PostgreSQL 16 + pgvector
+  # ============================================================
+  db:
+    image: docker.io/pgvector/pgvector:pg16
+    container_name: fitcoach-db-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fitcoach}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-fitcoach}
+    volumes:
+      - fitcoach_pgdata_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fitcoach}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # 不 ports 暴露 5432,只在 compose 内部网络通,更安全
+
+  # ============================================================
+  # 后端: FastAPI + Uvicorn
+  # ============================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fitcoach-backend-prod
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # 数据库连接串: 容器内部走 compose 服务名 db,不是 localhost
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-fitcoach}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-fitcoach}
+      # 从宿主机环境变量注入密钥,永远不进镜像层
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
+      MOONSHOT_API_KEY: ${MOONSHOT_API_KEY}
+      MOONSHOT_BASE_URL: ${MOONSHOT_BASE_URL:-https://api.moonshot.cn/v1}
+      MOONSHOT_MODEL: ${MOONSHOT_MODEL:-kimi-k3}
+
+  # ============================================================
+  # 前端 + 反代: Caddy 一体化
+  # 已 build 的静态文件 + 反代 /api/* 到 backend
+  # ============================================================
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: fitcoach-web-prod
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      # 宿主机 8080 (非标端口,规避腾讯云未备案封 80/443)
+      - "8080:80"
+    volumes:
+      # 用自定义 Caddyfile 覆盖镜像默认,支持反代
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+
+volumes:
+  fitcoach_pgdata_prod:

@@ -21,6 +21,10 @@ python-multipart==0.0.20  # 表单/文件
 # === LLM (M4 用) ===
 openai==1.59.5            # Moonshot 兼容 OpenAI SDK
 
+# === RAG (M8 用) ===
+pgvector==0.3.6           # SQLAlchemy Vector 列类型 + pgvector 客户端
+# 智谱 embedding 用 httpx 直连,已在测试依赖里
+
 # === 测试 (贯穿全程) ===
 pytest==8.3.4
 pytest-asyncio==0.25.0
