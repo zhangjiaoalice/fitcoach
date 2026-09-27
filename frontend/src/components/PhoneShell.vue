@@ -1,3 +1,10 @@
+<script lang="ts">
+// 显式默认导出，确保 `import PhoneShell from "./PhoneShell.vue"` 在类型检查/构建时始终可用。
+export default {
+  name: "PhoneShell",
+};
+</script>
+
 <script setup lang="ts">
 // 手机外壳：顶部灵动条 + 内容区（router-view）+ 底部 tabbar。
 // 二级页面（如 /chat）通过 route.meta.hideTabbar 隐藏底部导航。
