@@ -1,6 +1,6 @@
 """
 智谱 Embedding 客户端
-把文本专程 1024 维向量，给RAG 用
+把文本转成 1024 维向量，给RAG 用
 设计：
 - 支持单条（embed_one）和 批量（embed_batch）
 - 复用 moonshot 的 http.AsyncClient 模式
