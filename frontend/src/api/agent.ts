@@ -3,7 +3,7 @@
  * chat        - 非流式(M4 版,一次拿完整回复)
  * chatStream  - 流式 SSE(M7 版,边收边渲染,推荐)
  */
-import { ApiError, getToken } from "./client";
+import { ApiError, getToken, handleUnauthorized } from "./client";
 import type { AgentStreamEvent, ChatIn, ChatOut } from "./types";
 
 // ─────────────────────────────────────────────
@@ -45,8 +45,12 @@ export interface ChatStreamOptions {
  *   - 每条 SSE 帧以 \n\n 结尾,按它 split
  */
 export async function chatStream(opts: ChatStreamOptions): Promise<void> {
-  const token = getToken();
-  if (!token) throw new ApiError(401, "未登录");
+  try{
+    const token = getToken();
+  if (!token){
+    handleUnauthorized();
+    throw new ApiError(401, "登录已过期，请重新登录");
+  }
 
   const response = await fetch("/api/agent/chat/stream", {
     method: "POST",
@@ -60,6 +64,10 @@ export async function chatStream(opts: ChatStreamOptions): Promise<void> {
   });
 
   if (!response.ok) {
+    if(response.status === 401) {
+      handleUnauthorized();
+      throw new ApiError(401, "登录已过期，请重新登录");
+    }
     // 非 2xx 尝试解析错误详情
     let detail = response.statusText;
     try {
@@ -101,6 +109,11 @@ export async function chatStream(opts: ChatStreamOptions): Promise<void> {
 
         try {
           const event = JSON.parse(payload) as AgentStreamEvent;
+          // 流中出现 401 视为登录失效，重新登录
+          if (event.type === "error" && (event as any).code === 401) {
+            handleUnauthorized();
+            return
+          }
           opts.onEvent(event);
         } catch (e) {
           console.warn("[SSE] 帧 JSON 解析失败:", payload, e);
@@ -109,5 +122,9 @@ export async function chatStream(opts: ChatStreamOptions): Promise<void> {
     }
   } finally {
     reader.releaseLock();
+  }
+  } catch(err: any) {
+    if (err?.name === "AbortError") return; // 用户主动取消，静默
+    throw err;
   }
 }

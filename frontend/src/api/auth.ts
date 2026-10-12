@@ -8,6 +8,7 @@ export async function login(credentials: AuthCredentials): Promise<Token> {
   const token = await apiFetch<Token>("/auth/login", {
     method: "POST",
     body: JSON.stringify(credentials),
+    skipAuthRedirect: true,
   });
   setToken(token.access_token);
   return token;
@@ -17,9 +18,10 @@ export async function register(credentials: AuthCredentials): Promise<UserOut> {
   return apiFetch<UserOut>("/auth/register", {
     method: "POST",
     body: JSON.stringify(credentials),
+    skipAuthRedirect: true,
   });
 }
 
 export async function me(): Promise<UserOut> {
-  return apiFetch<UserOut>("/auth/me");
+  return apiFetch<UserOut>("/auth/me", {skipAuthRedirect: true});
 }

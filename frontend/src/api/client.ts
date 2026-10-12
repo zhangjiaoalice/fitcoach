@@ -9,6 +9,7 @@
  */
 
 const TOKEN_KEY = "fitcoach_token";
+let redirecting = false;
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
@@ -22,6 +23,19 @@ export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY);
 }
 
+export function handleUnauthorized() {
+  if (redirecting) return   // 防止并发请求重复跳
+  redirecting = true
+  clearToken()
+  // 带 redirect query，登录后回到原页
+  const from = encodeURIComponent(location.pathname + location.search)
+  location.href = `/login?redirect=${from}`
+}
+
+interface ApiOptions extends RequestInit {
+  skipAuthRedirect?: boolean  // 告诉拦截器"这次请求 401 别跳登录页"
+}
+
 /**
  * 统一封装 fetch。
  * @param path 以 / 开头的路径，如 /auth/login；会自动拼上 /api 前缀
@@ -29,8 +43,9 @@ export function clearToken(): void {
  */
 export async function apiFetch<T>(
   path: string,
-  init: RequestInit = {},
+  options: ApiOptions = {},
 ): Promise<T> {
+  const { skipAuthRedirect, ...init } = options;
   const url = `/api${path}`;
   const headers = new Headers(init.headers ?? {});
 
@@ -47,10 +62,8 @@ export async function apiFetch<T>(
   const response = await fetch(url, { ...init, headers });
 
   // 401 视为登录失效
-  if (response.status === 401) {
-    clearToken();
-    // 让路由守卫感知（M6 里会在 router.beforeEach 处理）
-    window.location.hash = "#/login";
+  if (response.status === 401 && !skipAuthRedirect) {
+    handleUnauthorized();
     throw new ApiError(401, "登录已过期，请重新登录");
   }
 
