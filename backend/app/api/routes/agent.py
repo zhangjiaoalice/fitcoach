@@ -85,7 +85,9 @@ async def chat_stream(data: ChatIn, current_user: User=Depends(get_current_user)
                     final_error = event.get("message", "unknown")
         except Exception as e:
             final_error = f"stream 意外中断： {e}"
-            yield __sse_pack({"type": "error", "message": final_error})
+            # 识别401单独标记code，前端根据这个来判断是否跳转到登录页面
+            code = 401 if "401" in str(e) or "Unauthorized" in str(e) else 500
+            yield __sse_pack({"type": "error", "message": final_error, "code": code})
         finally:
             # 无论成功还是失败，写一条trace 落库
             try:

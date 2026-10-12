@@ -8,6 +8,8 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import jwt
+
 from app.core.security import decode_access_token
 from app.db.session import get_db
 from app.models.user import User
@@ -25,14 +27,19 @@ async def get_current_user(
     )
     try:
         payload = decode_access_token(token)
-    except Exception as e:
+    except jwt.PyJWTError:
         raise credentials_error
 
     user_id = payload.get("sub")
     if user_id is None:
         raise credentials_error
 
-    user = await db.get(User, int(user_id))
+    try:
+        user_id_int = int(user_id)
+    except (TypeError, ValueError):
+        raise credentials_error
+
+    user = await db.get(User, user_id_int)
     if user is None:
         raise credentials_error
     return user
