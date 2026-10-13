@@ -62,3 +62,11 @@ else
     echo -e "${RED}❌ 同步失败${RESET}"
     exit 1
 fi
+
+# ─── 远程重建容器 ────────────────────────────────────
+if [ -z "$DRY_RUN" ]; then
+    echo -e "${GREEN}🚀 远程重建容器...${RESET}"
+    ssh "$REMOTE_USER@$REMOTE_HOST" "cd $REMOTE_PATH && \
+        docker compose -f docker-compose.prod.yml up -d --build backend web && \
+        docker compose -f docker-compose.prod.yml ps"
+fi

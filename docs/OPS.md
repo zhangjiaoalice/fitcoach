@@ -45,6 +45,24 @@ cd /root/fitcoach
 | 改了前端 `package.json` | `docker compose -f docker-compose.prod.yml build --no-cache web && docker compose -f docker-compose.prod.yml up -d web` |
 | 一键全重建 | `docker compose -f docker-compose.prod.yml up -d --build` |
 
+```bash
+# 先把 db 挂掉的容器清掉(会一直restart失败)
+docker compose --env-file .env.prod -f docker-compose.prod.yml down
+
+# 重启 db(会用 .env.prod 的密码重新初始化空 volume)
+docker compose --env-file .env.prod -f docker-compose.prod.yml up -d db
+
+# 等 db 变health
+sleep 20
+docker compose --env-file .env.prod -f docker-compose.prod.yml ps db
+
+# 验证密码加载进去了
+docker compose --env-file .env.prod -f docker-compose.prod.yml logs -f --tail=5 db
+
+# 重启
+docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
+```
+
 ### ③ 验证
 
 ```bash
