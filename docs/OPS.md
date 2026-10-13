@@ -1,7 +1,7 @@
 # FitCoach 运维小抄
 
 > 本地改完代码 → 推送到云 CVM → 重建容器 → 验证。
-> 服务器: `root@1.13.188.210`，项目路径 `/root/fitcoach/`，入口 `http://1.13.188.210:8080`。
+> 服务器: `root@43.137.46.175`，项目路径 `/root/fitcoach/`，入口 `http://43.137.46.175:8080`。
 
 ---
 
@@ -21,7 +21,7 @@ rsync -avz --delete \
   --exclude 'dist' \
   --exclude '.env' \
   --exclude '.DS_Store' \
-  ./ root@1.13.188.210:/root/fitcoach/
+  ./ root@43.137.46.175:/root/fitcoach/
 ```
 
 **关键**：
@@ -32,7 +32,7 @@ rsync -avz --delete \
 ### ② SSH 重建容器
 
 ```bash
-ssh root@1.13.188.210
+ssh root@43.137.46.175
 cd /root/fitcoach
 ```
 
@@ -54,7 +54,7 @@ docker compose -f docker-compose.prod.yml logs -f --tail=50 backend  # 看到 Uv
 curl http://localhost:8080/api/health                            # {"status":"ok","db":"connected"}
 ```
 
-**本地浏览器**打开 `http://1.13.188.210:8080`，登录试一条消息。
+**本地浏览器**打开 `http://43.137.46.175:8080`，登录试一条消息。
 
 ---
 
@@ -154,10 +154,10 @@ cd /Users/alice/Desktop/fitcoach && \
 rsync -avz --delete --exclude '.venv' --exclude 'node_modules' \
   --exclude '.git' --exclude '__pycache__' --exclude '*.pyc' \
   --exclude 'dist' --exclude '.env' --exclude '.DS_Store' \
-  ./ root@1.13.188.210:/root/fitcoach/
+  ./ root@43.137.46.175:/root/fitcoach/
 
 # 服务器
-ssh root@1.13.188.210 "cd /root/fitcoach && \
+ssh root@43.137.46.175 "cd /root/fitcoach && \
   docker compose -f docker-compose.prod.yml up -d --build backend web && \
   docker compose -f docker-compose.prod.yml ps"
 ```
