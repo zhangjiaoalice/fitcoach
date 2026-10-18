@@ -13,6 +13,7 @@ RUN npm ci
 # 拷业务代码 + 构建配置
 COPY tsconfig*.json vite.config.ts index.html ./
 COPY src ./src
+COPY public ./public
 
 # 构建产物落在 /app/dist
 RUN npm run build
