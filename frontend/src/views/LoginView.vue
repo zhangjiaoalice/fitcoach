@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 
 import { login, register } from "../api/auth";
 import { ApiError } from "../api/client";
+import { resetProfileCache } from "../router";
 import Mascot from "../components/Mascot.vue";
 
 const router = useRouter();
@@ -27,6 +28,9 @@ async function handleSubmit(): Promise<void> {
       // 注册完立即登录
     }
     await login({ email: email.value, password: password.value });
+    // 登录成功：清掉上次用户的画像缓存，让守卫重新查
+    // 新注册的用户 getProfile 会返回 null → 守卫自动跳 /onboarding
+    resetProfileCache();
     router.push({ name: "dashboard" });
   } catch (err) {
     errorMsg.value = err instanceof ApiError ? err.message : "请求失败，请重试";

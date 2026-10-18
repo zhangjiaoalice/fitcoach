@@ -283,7 +283,7 @@ onUnmounted(stopTyping);
         </svg>
       </button>
       <div class="title">
-        <h1>AI 教练</h1>
+        <h1>AI Coach</h1>
         <p>Kimi 驱动 · 可查画像 / 饮食 / 训练 / 体重</p>
       </div>
       <Mascot type="hero" variant="avatar" :size="40" />
@@ -291,33 +291,46 @@ onUnmounted(stopTyping);
 
     <div ref="scrollRef" class="msgs">
       <template v-for="m in messages" :key="m.id">
-        <!-- 用户气泡 -->
-        <div v-if="m.type === 'user'" class="bub bu">{{ m.text }}</div>
+        <!-- 用户气泡（右侧挂 Momo 头像） -->
+        <div v-if="m.type === 'user'" class="row row-user">
+          <div class="bub bu">{{ m.text }}</div>
+          <Mascot type="momo" variant="avatar" :size="34" class="row-avatar" />
+        </div>
 
-        <!-- AI 气泡（前面铺工具调用卡片） -->
+        <!-- AI 气泡（左侧挂 Hero 头像；工具调用卡片 + 回复文本共用一个 avatar） -->
         <template v-else-if="m.type === 'assistant'">
-          <div
-            v-for="(tc, ti) in m.toolCalls"
-            :key="`${m.id}-tc-${ti}`"
-            class="tool glass"
-          >
-            <span class="ic brand">
-              <Icon
-                :name="toolIcon(tc.name)"
-                :size="14"
-                color="var(--brand)"
-                :width="2.2"
-              />
-            </span>
-            <span>{{ toolLabel(tc.name) }}</span>
-            <span class="st" :class="tc.status">{{
-              toolStatusLabel(tc.status)
-            }}</span>
-          </div>
-          <!-- 空文本 + 未流式结束时不渲染气泡（避免闪一个空 bubble） -->
-          <div v-if="m.text || !m.streaming" class="bub ba">
-            <span>{{ m.text }}</span
-            ><span v-if="m.streaming" class="cursor" />
+          <div class="row row-ai">
+            <Mascot
+              type="hero"
+              variant="avatar"
+              :size="34"
+              class="row-avatar"
+            />
+            <div class="row-main">
+              <div
+                v-for="(tc, ti) in m.toolCalls"
+                :key="`${m.id}-tc-${ti}`"
+                class="tool glass"
+              >
+                <span class="ic brand">
+                  <Icon
+                    :name="toolIcon(tc.name)"
+                    :size="14"
+                    color="var(--brand)"
+                    :width="2.2"
+                  />
+                </span>
+                <span>{{ toolLabel(tc.name) }}</span>
+                <span class="st" :class="tc.status">{{
+                  toolStatusLabel(tc.status)
+                }}</span>
+              </div>
+              <!-- 空文本 + 未流式结束时不渲染气泡（避免闪一个空 bubble） -->
+              <div v-if="m.text || !m.streaming" class="bub ba">
+                <span>{{ m.text }}</span
+                ><span v-if="m.streaming" class="cursor" />
+              </div>
+            </div>
           </div>
         </template>
 
@@ -333,11 +346,14 @@ onUnmounted(stopTyping);
       <!-- 正在生成（LLM 还没出第一个 token 时，先显示三点动画） -->
       <div
         v-if="sending && messages[messages.length - 1]?.type === 'assistant' && !(messages[messages.length - 1] as AssistantMessage).text && (messages[messages.length - 1] as AssistantMessage).toolCalls.length === 0"
-        class="typing"
+        class="row row-ai typing-row"
       >
-        <span class="dot" />
-        <span class="dot" />
-        <span class="dot" />
+        <Mascot type="hero" variant="avatar" :size="34" class="row-avatar" />
+        <div class="typing">
+          <span class="dot" />
+          <span class="dot" />
+          <span class="dot" />
+        </div>
       </div>
     </div>
 
@@ -438,14 +454,44 @@ onUnmounted(stopTyping);
 .bu {
   background: var(--brand-grad);
   color: var(--on-brand);
-  margin-left: auto;
   border-bottom-right-radius: 5px;
+  margin-bottom: 0; /* row 已经控制了间距 */
 }
 .ba {
   color: var(--text-2);
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--brand-light);
   border: 1px solid var(--hairline);
   border-bottom-left-radius: 5px;
+  margin-bottom: 0;
+}
+
+/* ========== 消息行（气泡 + 头像） ========== */
+.row {
+  display: flex;
+  align-items: flex-start; /* 头像底对齐气泡顶 */
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.row-user {
+  justify-content: flex-end; /* 用户气泡靠右，头像在最右 */
+}
+.row-ai {
+  justify-content: flex-start;
+}
+.row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0; /* 让 flex 子项允许缩小，避免气泡溢出 */
+  max-width: calc(100% - 44px); /* 头像 34 + gap 8 + 预留 2 */
+}
+.row-avatar {
+  flex-shrink: 0;
+  border: 2px solid var(--glass-border);
+  background: var(--bg-elevated);
+}
+.typing-row {
+  align-items: center;
 }
 
 .tool {
@@ -549,7 +595,8 @@ onUnmounted(stopTyping);
   width: 100vw;
   height: 80px;
   padding: 12px 16px;
-  background: rgba(20, 25, 33, 0.92);
+  border-top: 1px solid var(--glass-border);
+  background: var(--brand-light);
   position: fixed;
   bottom: 0;
   left: 0;
@@ -569,7 +616,7 @@ onUnmounted(stopTyping);
   display: flex;
   gap: 8px;
   padding: 8px;
-  background: rgba(20, 25, 33, 0.92);
+  background: var(--coral);
   backdrop-filter: blur(10px);
   border: 1px solid var(--hairline);
   border-radius: 999px;
@@ -580,12 +627,12 @@ onUnmounted(stopTyping);
   padding: 10px 14px;
   border: 0;
   background: transparent;
-  color: var(--text-1);
-  font-size: 13px;
+  color: var(--brand-dark);
+  font-size: 16px;
   outline: none;
 }
 .composer input::placeholder {
-  color: var(--text-4);
+  color: #fff;
 }
 .composer button {
   width: 38px;

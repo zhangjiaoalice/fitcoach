@@ -3,6 +3,7 @@ import { useRouter } from "vue-router";
 import { profile } from "../api/mock";
 import Icon from "../components/Icon.vue";
 import { clearToken } from "../api/client";
+import { resetProfileCache } from "../router";
 import Mascot from "../components/Mascot.vue";
 
 interface MenuItem {
@@ -28,6 +29,7 @@ function goItem(item: MenuItem): void {
 
 function logout(): void {
   clearToken();
+  resetProfileCache();
   router.push({ name: "login" });
 }
 </script>
