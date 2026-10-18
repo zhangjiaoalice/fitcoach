@@ -46,6 +46,46 @@ export interface PlanBlock {
   rows: PlanRow[];
 }
 
+export interface WorkoutItem {
+  id: number;
+  type: "strength" | "cardio" | "stretch";
+  icon: string;             // emoji
+  name: string;             // 力量训练 · 腿
+  meta: string[];           // ["深蹲 4×12", "硬拉 4×10", "45 分钟"]
+  done: boolean;
+  estKcal: number;          // 预估消耗
+}
+
+export const workoutsToday: WorkoutItem[] = [
+  {
+    id: 1,
+    type: "strength",
+    icon: "💪",
+    name: "力量训练 · 腿",
+    meta: ["深蹲 4×12", "硬拉 4×10", "45 分钟"],
+    done: true,
+    estKcal: 220,
+  },
+  {
+    id: 2,
+    type: "cardio",
+    icon: "🏃",
+    name: "有氧 · 跑步机",
+    meta: ["中强度", "30 分钟", "目标心率 140"],
+    done: false,
+    estKcal: 180,
+  },
+  {
+    id: 3,
+    type: "stretch",
+    icon: "🧘",
+    name: "拉伸放松",
+    meta: ["全身", "10 分钟"],
+    done: false,
+    estKcal: 20,
+  },
+];
+
 export interface ChatMessage {
   type: "user" | "assistant" | "tool" | "citation" | "risk";
   text?: string;

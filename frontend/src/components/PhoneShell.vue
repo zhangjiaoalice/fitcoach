@@ -84,9 +84,19 @@ const showTabbar = computed(() => !route.meta?.hideTabbar);
   background: #242b36;
 }
 .content {
-  flex: 1;
   overflow-y: auto;
+  height: 100vh;
   padding: 2px 18px 84px;
+  /* 隐藏滚动条：Firefox */
+  scrollbar-width: none;
+  /* 隐藏滚动条：IE/老 Edge */
+  -ms-overflow-style: none;
+}
+/* 隐藏滚动条：Chrome / Safari / 新 Edge 等 Webkit 内核 */
+.content::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 /* 无 tabbar 页面（如 /chat）不留底部 padding */
 .content.no-tabbar {
