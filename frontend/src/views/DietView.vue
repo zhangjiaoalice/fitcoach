@@ -1,49 +1,331 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { profile, dietLogs } from "../api/mock";
-import Icon from "../components/Icon.vue";
+/**
+ * 记录 Tab 聚合页
+ *   - 展示 5 个记录入口 item：饮食/训练/饮水/体重/睡眠
+ *   - 点击 item 跳转到具体记录子页（暂未实现，先 toast 占位）
+ *   - 卡通可爱风，和 Dashboard / Onboarding 一致
+ */
+import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
+import Mascot from "../components/Mascot.vue";
 
-const total = computed(() => dietLogs.reduce((s, d) => s + d.kcal, 0));
+const router = useRouter();
 
-function analyze(): void {
-  // 后端 M5 的 analyze_diet_log 工具就绪后，这里改成调用 /api/agent 触发分析
-  alert("（示例）将调用 AI 分析今日摄入");
+// 当前日期
+const today = computed(() => {
+  const d = new Date();
+  return `${d.getMonth() + 1} 月 ${d.getDate()} 日`;
+});
+
+interface RecordItem {
+  key: "diet" | "workout" | "water" | "weight" | "sleep";
+  emoji: string;
+  label: string;
+  sub: string;
+  color: string;      // 图标盒子底色
+  accent: string;     // 图标盒子描边 / 文字强调色
+  routeName?: string; // 对应子页路由名（若未实现则为空）
+  summary?: string;   // 今日摘要
+}
+
+const items: RecordItem[] = [
+  {
+    key: "diet",
+    emoji: "🍱",
+    label: "饮食",
+    sub: "记录三餐和加餐",
+    color: "#FFE5CF",
+    accent: "#FF9F6B",
+    summary: "今日 1253 千卡",
+  },
+  {
+    key: "workout",
+    emoji: "🏋️",
+    label: "训练",
+    sub: "力量 / 有氧 / 拉伸",
+    color: "#DBEAFE",
+    accent: "#3B82F6",
+    summary: "今日 1 / 3 完成",
+  },
+  {
+    key: "water",
+    emoji: "💧",
+    label: "饮水",
+    sub: "喝水量追踪",
+    color: "#CCFBF1",
+    accent: "#14B8A6",
+    summary: "今日 1200 / 1600 ml",
+  },
+  {
+    key: "weight",
+    emoji: "⚖️",
+    label: "体重",
+    sub: "每日称重记录",
+    color: "#FEE2E2",
+    accent: "#EF4444",
+    summary: "最近 67.8 kg",
+  },
+  {
+    key: "sleep",
+    emoji: "🌙",
+    label: "睡眠",
+    sub: "入睡 / 睡眠时长",
+    color: "#EDE9FE",
+    accent: "#8B5CF6",
+    summary: "昨晚 7h32m",
+  },
+];
+
+// toast 轻提示
+const toastMsg = ref("");
+let toastTimer: ReturnType<typeof setTimeout> | null = null;
+function showToast(msg: string): void {
+  toastMsg.value = msg;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toastMsg.value = "";
+  }, 1800);
+}
+
+function openRecord(item: RecordItem): void {
+  if (item.routeName) {
+    router.push({ name: item.routeName });
+  } else {
+    // 子页还没想好，先 toast 占位
+    showToast(`${item.label}记录页正在设计中 🛠️`);
+  }
+}
+
+function goChat(): void {
+  router.push({ name: "chat" });
 }
 </script>
 
 <template>
-  <header class="hd">
-    <div>
-      <h1>饮食记录</h1>
-      <p>8 月 4 日 · 已摄入 {{ total }} kcal</p>
+  <div class="rec">
+    <!-- 顶栏 -->
+    <header class="hd">
+      <div>
+        <h1>记录</h1>
+        <p class="date">{{ today }} · 今日</p>
+      </div>
+      <Mascot type="momo" variant="avatar" :size="40" />
+    </header>
+
+    <!-- 小提示（AI 入口） -->
+    <button class="ai-bar" @click="goChat">
+      <span class="ai-ic">✦</span>
+      <span class="ai-txt">说一句"午餐吃了鸡胸肉"，Momo 帮你结构化</span>
+      <span class="ai-arrow">›</span>
+    </button>
+
+    <!-- 记录入口列表 -->
+    <section class="list">
+      <button
+        v-for="it in items"
+        :key="it.key"
+        class="item"
+        @click="openRecord(it)"
+      >
+        <div
+          class="ic"
+          :style="{ background: it.color, borderColor: it.accent }"
+        >
+          <span class="emoji">{{ it.emoji }}</span>
+        </div>
+        <div class="main">
+          <p class="label">{{ it.label }}</p>
+          <p class="sub">{{ it.sub }}</p>
+        </div>
+        <div class="side">
+          <p class="summary" :style="{ color: it.accent }">
+            {{ it.summary }}
+          </p>
+          <span class="arrow">›</span>
+        </div>
+      </button>
+    </section>
+
+    <!-- Momo 底部鼓励 -->
+    <div class="encourage">
+      <Mascot type="momo" variant="avatar" :size="40" />
+      <p>每天记录一点点，Momo 会越来越懂你 💪</p>
     </div>
-    <div class="av">{{ profile.initials }}</div>
-  </header>
 
-  <div class="card glass nl">
-    <Icon name="mic" :size="17" color="var(--brand)" />
-    <span>说一句“午餐吃了鸡胸肉和米饭”，自动结构化</span>
+    <!-- Toast -->
+    <transition name="fade">
+      <div v-if="toastMsg" class="toast">{{ toastMsg }}</div>
+    </transition>
   </div>
-
-  <div v-for="d in dietLogs" :key="d.id" class="li">
-    <span class="mi"><Icon :name="d.icon" :size="18" :color="d.color" :width="1.8" /></span>
-    <div class="tx">{{ d.name }}<small>{{ d.meal }} · {{ d.time }}</small></div>
-    <span class="kc">{{ d.kcal }} kcal</span>
-  </div>
-
-  <button class="cta" @click="analyze">让 AI 分析今日摄入 ↗</button>
 </template>
 
 <style scoped>
-.hd { display: flex; justify-content: space-between; align-items: center; padding: 8px 0 18px; }
-.hd h1 { font-size: 21px; font-weight: 500; letter-spacing: -0.02em; }
-.hd p { font-size: 12px; color: var(--text-3); margin-top: 3px; }
-.av { width: 40px; height: 40px; border-radius: 50%; background: var(--brand-grad); color: var(--on-brand); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; }
-.nl { display: flex; align-items: center; gap: 11px; padding: 13px 15px; margin-bottom: 4px; font-size: 13px; color: var(--text-3); }
-.li { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--hairline); }
-.mi { width: 36px; height: 36px; border-radius: 10px; background: rgba(255, 255, 255, 0.05); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.tx { flex: 1; font-size: 13px; color: var(--text-2); }
-.tx small { display: block; color: var(--text-4); font-size: 11px; margin-top: 2px; }
-.kc { font-size: 13px; color: var(--text-3); }
-.cta { margin-top: 16px; }
+.rec {
+  padding-bottom: 24px;
+}
+
+/* 顶栏 */
+.hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 2px 18px;
+}
+.hd h1 {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--text-1);
+}
+.date {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 4px;
+}
+
+/* AI 快速提示条 */
+.ai-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px;
+  margin-bottom: 14px;
+  background: linear-gradient(135deg, #F0F7FF 0%, var(--bg-elevated) 100%);
+  border: 2px solid var(--brand-light);
+  border-radius: 999px;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+.ai-ic {
+  color: var(--brand);
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.ai-txt {
+  flex: 1;
+  text-align: left;
+  font-size: 12px;
+  color: var(--text-2);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ai-arrow {
+  color: var(--brand);
+  font-size: 18px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+/* 记录入口列表 */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 14px;
+  background: var(--bg-elevated);
+  border: 2px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.1s, box-shadow 0.1s;
+  width: 100%;
+}
+.item:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 var(--glass-border);
+}
+.ic {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.emoji {
+  font-size: 24px;
+  line-height: 1;
+}
+.main {
+  flex: 1;
+  min-width: 0;
+}
+.label {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-1);
+  margin-bottom: 2px;
+}
+.sub {
+  font-size: 12px;
+  color: var(--text-3);
+}
+.side {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.summary {
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.arrow {
+  color: var(--text-3);
+  font-size: 20px;
+}
+
+/* 底部鼓励条 */
+.encourage {
+  margin-top: 18px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-elevated);
+  border: 1.5px dashed var(--glass-border);
+  border-radius: 14px;
+}
+.encourage p {
+  font-size: 12px;
+  color: var(--text-2);
+  font-weight: 600;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 110px;
+  transform: translateX(-50%);
+  background: rgba(60, 60, 60, 0.9);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 18px;
+  border-radius: 999px;
+  z-index: 30;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.22s, transform 0.22s;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(6px);
+}
 </style>
