@@ -5,6 +5,7 @@ import { useRouter } from "vue-router";
 import Icon from "../components/Icon.vue";
 import { chatStream } from "../api/agent";
 import { ApiError } from "../api/client";
+import Mascot from "../components/Mascot.vue";
 
 const router = useRouter();
 
@@ -285,7 +286,7 @@ onUnmounted(stopTyping);
         <h1>AI 教练</h1>
         <p>Kimi 驱动 · 可查画像 / 饮食 / 训练 / 体重</p>
       </div>
-      <div class="av">FC</div>
+      <Mascot type="hero" variant="avatar" :size="40" />
     </header>
 
     <div ref="scrollRef" class="msgs">

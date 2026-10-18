@@ -93,18 +93,19 @@ const showTabbar = computed(() => !route.meta?.hideTabbar);
   padding: 2px 18px 0;
 }
 .tabbar {
-  position: absolute;
+  position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   height: 64px;
-  border-top: 1px solid #171d26;
-  background: rgba(12, 15, 20, 0.92);
+  border-top: 1px solid var(--glass-border);
+  background: var(--brand-light);
   backdrop-filter: blur(8px);
   display: flex;
   justify-content: space-around;
   align-items: center;
   padding-bottom: 8px;
+  z-index: 10;
 }
 .tab {
   background: none;

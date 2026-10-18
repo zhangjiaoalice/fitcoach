@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 
 import { login, register } from "../api/auth";
 import { ApiError } from "../api/client";
+import Mascot from "../components/Mascot.vue";
 
 const router = useRouter();
 
@@ -38,11 +39,10 @@ async function handleSubmit(): Promise<void> {
 <template>
   <div class="login-wrap">
     <div class="brand">
-      <div class="logo">FC</div>
+      <Mascot type="momo" variant="full" :size="200" />
       <h1>FitCoach</h1>
-      <p>AI 健身减脂教练</p>
+      <p>和 Fit Momo 一起练出理想身材 💪</p>
     </div>
-
     <div class="tabs">
       <button :class="{ on: mode === 'login' }" @click="mode = 'login'">
         登录
@@ -82,11 +82,11 @@ async function handleSubmit(): Promise<void> {
 <style scoped>
 .login-wrap {
   height: 100vh;
-  background: var(--bg-app);
+  background: linear-gradient(180deg, #fffbf5 0%, #dbeafe 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 80px 32px;
+  padding: 40px 32px;
   overflow: hidden;
 }
 .brand {
@@ -121,7 +121,8 @@ async function handleSubmit(): Promise<void> {
   gap: 4px;
   width: 100%;
   max-width: 320px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-elevated);
+  border: 2px solid var(--glass-border);
   padding: 4px;
   border-radius: 10px;
   margin-bottom: 20px;
@@ -156,12 +157,13 @@ async function handleSubmit(): Promise<void> {
   gap: 6px;
 }
 .form input {
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid var(--hairline);
-  background: rgba(255, 255, 255, 0.04);
+  padding: 14px;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--glass-border);
+  background: var(--bg-elevated);
   color: var(--text-1);
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 500;
 }
 .form input:focus {
   outline: 0;
@@ -174,14 +176,20 @@ async function handleSubmit(): Promise<void> {
 }
 .submit {
   margin-top: 8px;
-  padding: 12px;
+  padding: 14px;
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   background: var(--brand-grad);
   color: var(--on-brand);
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 800;
   cursor: pointer;
+  box-shadow: var(--shadow-primary);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.submit:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 var(--brand-dark);
 }
 .submit:disabled {
   opacity: 0.6;

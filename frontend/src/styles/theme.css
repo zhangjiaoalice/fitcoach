@@ -1,31 +1,51 @@
-:root {
-  /* 深色高端主题 tokens —— 全站统一从这里取色 */
-  --bg-app: #0c0f14;
-  --bg-elevated: #11151c;
-  --glass-bg: rgba(255, 255, 255, 0.045);
-  --glass-border: rgba(255, 255, 255, 0.07);
-  --hairline: rgba(255, 255, 255, 0.05);
+:root{
+  /*
+  * 明亮卡通主题
+  */
+  /* 背景 */
+  --bg-app: #FFFBF5;
+  --bg-elevated: #FFFFFF;
+  --glass-bg: #FFFFFF;
+  --glass-border: #E5E5E5;
+  --hairline: rgba(60, 60, 60, 0.08);
 
-  --brand: #10b981;
-  --brand-light: #34d399;
-  --brand-bright: #3ddba0;
-  --brand-dark: #0d8a63;
-  --on-brand: #042117;
-  --brand-grad: linear-gradient(135deg, #10b981, #0d8a63);
+  /* 品牌色（任务蓝）*/
+  --brand: #3B82F6;
+  --brand-light: #DBEAFE;
+  --brand-dark: #2563EB;
+  --on-brand: #FFFFFF;
+  --brand-grad: linear-gradient(135deg, #3B82F6, #2563EB);
 
-  --text-1: #f4f6f8;
-  --text-2: #c4cad3;
-  --text-3: #8b93a1;
-  --text-4: #6f7784;
+  /* 功能色 */
+  --success: #58CC02;             /* 完成绿 */
+  --success-light: #D7F7B4;
+  --warning: #FFC800;             /* 奖励金 */
+  --warning-light: #FFF4CC;
+  --danger: #FF4B4B;
+  --coral: #FF9ED2;               /* 腮红粉 */
+  --purple: #CE82FF;              /* 体重紫 */
 
-  --info: #5aa9f0;
-  --warn: #eab308;
-  --coral: #f0997b;
+  /* 文字（反转：从浅到深） */
+  --text-1: #3C3C3C;              /* 主文字 */
+  --text-2: #666666;
+  --text-3: #999999;
+  --text-4: #BBBBBB;
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 14px;
-  --radius-xl: 22px;
+  /* 兼容旧变量名 */
+  --info: #3B82F6;
+  --warn: #FFC800;
+
+  /* 圆角（整体放大 2px） */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  /* 卡通厚底阴影（新增） */
+  --shadow-sm: 0 2px 0 #E5E5E5;
+  --shadow-md: 0 4px 0 #E5E5E5;
+  --shadow-primary: 0 4px 0 var(--brand-dark);
+  --shadow-success: 0 4px 0 #46A302;
 
   --font-sans: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', Roboto, sans-serif;
 }
@@ -50,26 +70,30 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* 玻璃卡片通用类 */
+/* 卡片：从玻璃模糊 → 白底 + 粗描边 + 厚底阴影 */
 .glass {
   background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  border: 2px solid var(--glass-border);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
-/* 主 CTA 按钮 */
+/* 主 CTA 按钮：加厚底阴影 + 按下反馈 */
 .cta {
   width: 100%;
-  padding: 12px;
+  padding: 14px;
   border-radius: var(--radius-md);
   background: var(--brand-grad);
   color: var(--on-brand);
   border: none;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
   cursor: pointer;
+  box-shadow: var(--shadow-primary);
+  transition: transform 0.1s, box-shadow 0.1s;
 }
-
 .cta:active {
-  opacity: 0.85;
+  transform: translateY(2px);
+  box-shadow: 0 0 0 var(--brand-dark);
 }
