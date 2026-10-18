@@ -43,7 +43,7 @@ async function handleSubmit(): Promise<void> {
 <template>
   <div class="login-wrap">
     <div class="brand">
-      <Mascot type="momo" variant="full" :size="200" />
+      <Mascot type="momo" variant="full" :size="200" priority />
       <h1>FitCoach</h1>
       <p>和 Fit Momo 一起练出理想身材 💪</p>
     </div>
