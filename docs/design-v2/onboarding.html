@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>FitCoach · Onboarding 新手引导</title>
+<style>
+  :root {
+    --primary: #3B82F6;
+    --primary-dark: #2563EB;
+    --primary-light: #DBEAFE;
+    --success: #58CC02;
+    --success-light: #D7F7B4;
+    --warning: #FFC800;
+    --warning-light: #FFF4CC;
+    --danger: #FF4B4B;
+    --purple: #CE82FF;
+    --pink: #FF9ED2;
+    --bg: #FFFBF5;
+    --surface: #FFFFFF;
+    --border: #E5E5E5;
+    --text: #3C3C3C;
+    --text-sub: #777;
+    --text-light: #AAA;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --radius-lg: 24px;
+    --shadow-sm: 0 2px 0 var(--border);
+    --shadow-md: 0 4px 0 var(--border);
+    --shadow-primary: 0 4px 0 var(--primary-dark);
+    --shadow-success: 0 4px 0 #46A302;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'PingFang SC', -apple-system, 'Nunito', sans-serif;
+    background: linear-gradient(180deg, #FFFBF5 0%, #FFF4E8 100%);
+    color: var(--text);
+    padding: 40px 20px;
+    min-height: 100vh;
+  }
+  h1.page-title { font-size: 26px; text-align: center; margin-bottom: 8px; }
+  p.page-sub { text-align: center; color: var(--text-sub); margin-bottom: 40px; }
+
+  .canvas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, 375px);
+    gap: 40px;
+    justify-content: center;
+    max-width: 1700px;
+    margin: 0 auto;
+  }
+
+  .phone {
+    width: 375px;
+    background: var(--surface);
+    border: 3px solid var(--text);
+    border-radius: 32px;
+    box-shadow: 0 8px 0 rgba(60,60,60,0.15), 0 20px 40px rgba(60,60,60,0.1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 760px;
+    position: relative;
+  }
+  .phone-label {
+    position: absolute;
+    top: -36px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text);
+    color: #fff;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  /* 顶栏（返回 + 进度条 + 跳过） */
+  .topbar {
+    padding: 16px 20px 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+  }
+  .back {
+    width: 32px; height: 32px;
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    color: var(--text-sub);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .progress {
+    flex: 1;
+    display: flex;
+    gap: 6px;
+  }
+  .progress-seg {
+    flex: 1;
+    height: 10px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress-seg.active {
+    background: linear-gradient(90deg, var(--success), #46A302);
+  }
+  .progress-seg.current {
+    background: linear-gradient(90deg, var(--success) 60%, var(--border) 60%);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+  .skip {
+    background: none;
+    border: none;
+    color: var(--text-light);
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  /* 内容区 */
+  .screen {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 24px 24px;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Momo 对白区 */
+  .momo-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    margin-bottom: 20px;
+  }
+  .momo-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #FFEEEE 0%, #FFD5D5 100%);
+    border: 3px solid #FF9ED2;
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .momo-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+  }
+  .momo-avatar.fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+  }
+  .speech {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    padding: 12px 14px;
+    border-radius: 16px;
+    border-top-left-radius: 4px;
+    font-size: 14px;
+    line-height: 1.5;
+    box-shadow: var(--shadow-sm);
+    max-width: 220px;
+    position: relative;
+  }
+  .speech::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    bottom: 10px;
+    width: 10px;
+    height: 10px;
+    background: var(--surface);
+    border-left: 2px solid var(--border);
+    border-bottom: 2px solid var(--border);
+    transform: rotate(45deg);
+  }
+
+  /* 问题 */
+  .question {
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 20px;
+    letter-spacing: -0.01em;
+  }
+  .question .emoji { font-size: 24px; margin-right: 4px; }
+
+  /* 输入 */
+  .field { margin-bottom: 18px; }
+  .label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-sub);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 16px;
+    font-weight: 600;
+    background: var(--surface);
+    outline: none;
+    transition: all 0.15s;
+  }
+  .input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+  }
+
+  /* 选项卡片组（性别 / 目标） */
+  .choice-grid {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .choice-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .choice-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .choice {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 10px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.15s;
+  }
+  .choice:hover { transform: translateY(-2px); }
+  .choice.selected {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    box-shadow: var(--shadow-primary);
+  }
+  .choice .emoji { font-size: 36px; display: block; margin-bottom: 6px; }
+  .choice .label-txt { font-size: 13px; font-weight: 700; color: var(--text); }
+  .choice .sub { font-size: 11px; color: var(--text-sub); margin-top: 2px; display: block; }
+
+  /* 数值滑块 */
+  .number-stepper {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    box-shadow: var(--shadow-sm);
+  }
+  .stepper-btn {
+    width: 44px; height: 44px;
+    border: 2px solid var(--primary);
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    border-radius: 50%;
+    font-size: 22px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+  .stepper-value {
+    flex: 1;
+    text-align: center;
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--primary-dark);
+  }
+  .stepper-value .unit {
+    font-size: 14px;
+    color: var(--text-sub);
+    font-weight: 500;
+    margin-left: 2px;
+  }
+
+  /* 多选 chip */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .chip {
+    padding: 10px 14px;
+    border: 2px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .chip.selected {
+    border-color: var(--success);
+    background: var(--success-light);
+    color: #2E7D00;
+  }
+  .chip .emoji { margin-right: 4px; }
+
+  /* 按钮 */
+  .footer {
+    padding: 12px 24px 20px;
+    background: var(--surface);
+    border-top: 2px solid var(--border);
+  }
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.1s;
+  }
+  .btn:active { transform: translateY(2px); }
+  .btn-primary {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: var(--shadow-primary);
+  }
+  .btn-primary:active { box-shadow: 0 0 0 var(--primary-dark); }
+  .btn-success {
+    background: var(--success);
+    color: #fff;
+    box-shadow: var(--shadow-success);
+  }
+  .btn-success:active { box-shadow: 0 0 0 #46A302; }
+  .btn-disabled {
+    background: var(--border);
+    color: var(--text-light);
+    box-shadow: 0 2px 0 #CCC;
+    cursor: not-allowed;
+  }
+
+  /* 完成页 confetti */
+  .success-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .confetti {
+    position: absolute;
+    font-size: 24px;
+    animation: confetti-fall 3s ease-in infinite;
+    opacity: 0.9;
+  }
+  @keyframes confetti-fall {
+    0% { transform: translateY(-100vh) rotate(0deg); }
+    100% { transform: translateY(100vh) rotate(720deg); }
+  }
+  .success-mascot {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #FFEEEE 0%, #FFD5D5 100%);
+    border: 4px solid #FF9ED2;
+    overflow: hidden;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 2;
+  }
+  .success-mascot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+  }
+  .success-mascot.fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 90px;
+  }
+  .success-title {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--primary-dark);
+    margin-bottom: 10px;
+    position: relative;
+    z-index: 2;
+  }
+  .success-sub {
+    color: var(--text-sub);
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 30px;
+    position: relative;
+    z-index: 2;
+  }
+  .success-summary {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 24px;
+    width: 100%;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    z-index: 2;
+  }
+  .success-summary .row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 13px;
+    border-bottom: 1px dashed var(--border);
+  }
+  .success-summary .row:last-child { border-bottom: none; }
+  .success-summary .k { color: var(--text-sub); }
+  .success-summary .v { font-weight: 800; color: var(--text); }
+
+  /* ===== 文档外展示 ===== */
+  .doc {
+    max-width: 1200px;
+    margin: 60px auto 20px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 30px;
+    box-shadow: var(--shadow-md);
+  }
+  .doc h2 { font-size: 20px; margin-bottom: 16px; color: var(--primary-dark); }
+  .doc h3 { font-size: 14px; color: var(--text-sub); margin: 16px 0 8px; }
+  .doc ul { font-size: 14px; line-height: 1.8; color: var(--text); padding-left: 20px; }
+  .doc code {
+    background: var(--primary-light);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: Menlo, monospace;
+    font-size: 12px;
+  }
+  .doc table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
+  .doc th, .doc td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+  .doc th { background: var(--primary-light); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<h1 class="page-title">🎀 FitCoach · Onboarding 新手引导</h1>
+<p class="page-sub">注册后强制跳转 · 卡通可爱风 · 3 步问卷式 · Momo 全程陪跑</p>
+
+<div class="canvas">
+
+  <!-- ========== Step 1：你是谁 ========== -->
+  <div class="phone">
+    <div class="phone-label">Step 1 / 3 · 认识你</div>
+    <div class="topbar">
+      <button class="back">←</button>
+      <div class="progress">
+        <div class="progress-seg current"></div>
+        <div class="progress-seg"></div>
+        <div class="progress-seg"></div>
+      </div>
+      <button class="skip" style="visibility:hidden">跳过</button>
+    </div>
+
+    <div class="screen">
+      <div class="momo-row">
+        <div class="momo-avatar">
+          <img src="../assets/momo-avatar.png" alt="Momo" onerror="this.parentNode.classList.add('fallback'); this.remove(); this.parentNode.textContent='👧🏻'">
+        </div>
+        <div class="speech">嗨～我是 Momo 💕<br>先让我认识一下你吧！</div>
+      </div>
+
+      <div class="question">🎀 你叫什么名字？</div>
+
+      <div class="field">
+        <label class="label">昵称</label>
+        <input class="input" type="text" placeholder="给自己起个响亮的名字" value="Alice">
+      </div>
+
+      <div class="question" style="margin-top:10px;">👫 你的性别是？</div>
+      <div class="choice-grid cols-2">
+        <div class="choice selected">
+          <span class="emoji">👩</span>
+          <span class="label-txt">女生</span>
+        </div>
+        <div class="choice">
+          <span class="emoji">👨</span>
+          <span class="label-txt">男生</span>
+        </div>
+      </div>
+
+      <div class="question" style="margin-top:10px;">🎂 你今年多大？</div>
+      <div class="field">
+        <div class="number-stepper">
+          <button class="stepper-btn">−</button>
+          <div class="stepper-value">27<span class="unit">岁</span></div>
+          <button class="stepper-btn">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <button class="btn btn-primary">下一步 →</button>
+    </div>
+  </div>
+
+  <!-- ========== Step 2：身材 ========== -->
+  <div class="phone">
+    <div class="phone-label">Step 2 / 3 · 身材数据</div>
+    <div class="topbar">
+      <button class="back">←</button>
+      <div class="progress">
+        <div class="progress-seg active"></div>
+        <div class="progress-seg current"></div>
+        <div class="progress-seg"></div>
+      </div>
+      <button class="skip" style="visibility:hidden">跳过</button>
+    </div>
+
+    <div class="screen">
+      <div class="momo-row">
+        <div class="momo-avatar">
+          <img src="../assets/momo-avatar.png" alt="Momo" onerror="this.parentNode.classList.add('fallback'); this.remove(); this.parentNode.textContent='💪'">
+        </div>
+        <div class="speech">这个数据只有我们俩知道～<br>放心告诉我 ✨</div>
+      </div>
+
+      <div class="question">📏 你的身高是？</div>
+      <div class="field">
+        <div class="number-stepper">
+          <button class="stepper-btn">−</button>
+          <div class="stepper-value">165<span class="unit">cm</span></div>
+          <button class="stepper-btn">+</button>
+        </div>
+      </div>
+
+      <div class="question" style="margin-top:10px;">⚖️ 当前体重？</div>
+      <div class="field">
+        <div class="number-stepper">
+          <button class="stepper-btn">−</button>
+          <div class="stepper-value">58.2<span class="unit">kg</span></div>
+          <button class="stepper-btn">+</button>
+        </div>
+      </div>
+
+      <div class="question" style="margin-top:10px;">🎯 目标体重？</div>
+      <div class="field">
+        <div class="number-stepper">
+          <button class="stepper-btn">−</button>
+          <div class="stepper-value" style="color:var(--success);">54.0<span class="unit">kg</span></div>
+          <button class="stepper-btn">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <button class="btn btn-primary">下一步 →</button>
+    </div>
+  </div>
+
+  <!-- ========== Step 3：目标 ========== -->
+  <div class="phone">
+    <div class="phone-label">Step 3 / 3 · 训练目标</div>
+    <div class="topbar">
+      <button class="back">←</button>
+      <div class="progress">
+        <div class="progress-seg active"></div>
+        <div class="progress-seg active"></div>
+        <div class="progress-seg current"></div>
+      </div>
+      <button class="skip" style="visibility:hidden">跳过</button>
+    </div>
+
+    <div class="screen">
+      <div class="momo-row">
+        <div class="momo-avatar">
+          <img src="../assets/momo-avatar.png" alt="Momo" onerror="this.parentNode.classList.add('fallback'); this.remove(); this.parentNode.textContent='🔥'">
+        </div>
+        <div class="speech">最后一步啦～<br>说说你的小目标 🎯</div>
+      </div>
+
+      <div class="question">🎯 你想要什么？</div>
+      <div class="choice-grid cols-3">
+        <div class="choice selected">
+          <span class="emoji">🔥</span>
+          <span class="label-txt">减脂</span>
+          <span class="sub">减少体脂</span>
+        </div>
+        <div class="choice">
+          <span class="emoji">💪</span>
+          <span class="label-txt">增肌</span>
+          <span class="sub">长肌肉</span>
+        </div>
+        <div class="choice">
+          <span class="emoji">✨</span>
+          <span class="label-txt">塑形</span>
+          <span class="sub">线条感</span>
+        </div>
+      </div>
+
+      <div class="question" style="margin-top:10px;">📅 一周能练几次？</div>
+      <div class="choice-grid cols-3">
+        <div class="choice">
+          <span class="emoji" style="font-size:28px;">🚶</span>
+          <span class="label-txt">1-2 次</span>
+          <span class="sub">轻度</span>
+        </div>
+        <div class="choice selected">
+          <span class="emoji" style="font-size:28px;">🏃</span>
+          <span class="label-txt">3-4 次</span>
+          <span class="sub">适中</span>
+        </div>
+        <div class="choice">
+          <span class="emoji" style="font-size:28px;">🏋️</span>
+          <span class="label-txt">5+ 次</span>
+          <span class="sub">硬核</span>
+        </div>
+      </div>
+
+      <div class="question" style="margin-top:10px;">🥗 饮食偏好？（多选）</div>
+      <div class="chips">
+        <div class="chip selected"><span class="emoji">🍗</span>高蛋白</div>
+        <div class="chip selected"><span class="emoji">🥦</span>低碳水</div>
+        <div class="chip"><span class="emoji">🌱</span>素食</div>
+        <div class="chip"><span class="emoji">🚫</span>戒糖</div>
+        <div class="chip"><span class="emoji">🥛</span>无乳糖</div>
+        <div class="chip"><span class="emoji">🌾</span>无麸质</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <button class="btn btn-success">完成 ✨</button>
+    </div>
+  </div>
+
+  <!-- ========== 完成页 ========== -->
+  <div class="phone">
+    <div class="phone-label">🎉 完成庆祝</div>
+    <div class="success-screen">
+      <!-- Confetti 彩屑 -->
+      <div class="confetti" style="left:10%; animation-delay:0s;">🎉</div>
+      <div class="confetti" style="left:25%; animation-delay:0.3s;">✨</div>
+      <div class="confetti" style="left:40%; animation-delay:0.6s;">⭐</div>
+      <div class="confetti" style="left:55%; animation-delay:0.9s;">💪</div>
+      <div class="confetti" style="left:70%; animation-delay:1.2s;">🎊</div>
+      <div class="confetti" style="left:85%; animation-delay:1.5s;">💕</div>
+
+      <div class="success-mascot">
+        <img src="../assets/momo-avatar.png" alt="Momo" onerror="this.parentNode.classList.add('fallback'); this.remove(); this.parentNode.textContent='🤗'">
+      </div>
+      <div class="success-title">欢迎你，Alice！</div>
+      <div class="success-sub">我已经了解你啦<br>咱们一起冲向目标 💪✨</div>
+
+      <div class="success-summary">
+        <div class="row"><span class="k">🎀 昵称</span><span class="v">Alice</span></div>
+        <div class="row"><span class="k">👩 性别 · 年龄</span><span class="v">女生 · 27 岁</span></div>
+        <div class="row"><span class="k">📏 身高 · 体重</span><span class="v">165cm · 58.2kg</span></div>
+        <div class="row"><span class="k">🎯 目标体重</span><span class="v" style="color:var(--success);">54.0kg (-4.2kg)</span></div>
+        <div class="row"><span class="k">🔥 训练目标</span><span class="v">减脂 · 每周 3-4 次</span></div>
+      </div>
+
+      <button class="btn btn-success" style="width:100%;">开始冒险 🚀</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========== 文档区 ========== -->
+<div class="doc">
+  <h2>📋 交互逻辑说明</h2>
+
+  <h3>触发时机</h3>
+  <ul>
+    <li>用户 <code>register</code> 成功 → 后端返回 <code>profile_completed: false</code></li>
+    <li>前端 router guard 判断：没完成画像 → 强制跳 <code>/onboarding</code>，不能访问 /chat /me 等页</li>
+    <li>完成后调 <code>PATCH /users/me/profile</code>，后端标记 <code>profile_completed: true</code> → 跳 /dashboard</li>
+    <li>用户想修改时从 /me → 画像设置 → 可以重新进入，但不强制</li>
+  </ul>
+
+  <h3>字段映射（对应后端 UserProfile model）</h3>
+  <table>
+    <tr><th>UI 字段</th><th>后端字段</th><th>类型</th><th>必填</th></tr>
+    <tr><td>昵称</td><td>nickname</td><td>str</td><td>✅</td></tr>
+    <tr><td>性别</td><td>gender</td><td>male / female</td><td>✅</td></tr>
+    <tr><td>年龄</td><td>age</td><td>int (14-80)</td><td>✅</td></tr>
+    <tr><td>身高</td><td>height_cm</td><td>numeric(5,1)</td><td>✅</td></tr>
+    <tr><td>当前体重</td><td>weight_kg</td><td>numeric(5,2)</td><td>✅</td></tr>
+    <tr><td>目标体重</td><td>target_weight_kg</td><td>numeric(5,2)</td><td>⚠️ 根据目标判断</td></tr>
+    <tr><td>训练目标</td><td>goal</td><td>lose_fat / gain_muscle / tone</td><td>✅</td></tr>
+    <tr><td>训练频率</td><td>training_frequency</td><td>low / medium / high</td><td>✅</td></tr>
+    <tr><td>饮食偏好</td><td>diet_preferences</td><td>str[] (JSON)</td><td>⚪ 可选</td></tr>
+  </table>
+
+  <h3>各步校验</h3>
+  <ul>
+    <li>Step 1：昵称 2-20 字 + 性别必选 + 年龄 14-80</li>
+    <li>Step 2：身高 100-220cm + 体重 30-200kg；目标体重 ±30% 当前体重，防止极端值</li>
+    <li>Step 3：目标 + 频率必选；饮食偏好可空</li>
+    <li>按钮状态：未满足字段 → <code>.btn-disabled</code> 置灰；满足 → 蓝色高亮</li>
+  </ul>
+
+  <h3>键盘体验（移动端细节）</h3>
+  <ul>
+    <li>昵称输入：<code>enterkeyhint="next"</code>，回车直接跳下一个字段</li>
+    <li>数字字段：<code>inputmode="decimal"</code> 调出数字键盘，不要 iOS 全键盘</li>
+    <li>stepper 按住 +/− 长按连加（≥ 500ms 启动 50ms 节流）</li>
+    <li>页面避免 keyboard 弹出遮挡：主体内容加 <code>padding-bottom: 48vh</code> on focus</li>
+  </ul>
+
+  <h3>动画细节</h3>
+  <ul>
+    <li>进度条当前段：<code>pulse</code> 呼吸动画</li>
+    <li>选项卡被选中：<code>transform: scale(1.02)</code> + 阴影加深</li>
+    <li>完成页：6 个 emoji confetti 下落 + Momo 居中出现 + 底部按钮延迟 0.5s 淡入</li>
+    <li>"开始冒险" 点击：confetti 加速 + 跳转 /dashboard</li>
+  </ul>
+
+  <h3>Vue 组件拆分建议</h3>
+  <ul>
+    <li><code>OnboardingLayout.vue</code> — 顶栏进度条 + Momo 对白 + 底部按钮壳</li>
+    <li><code>OnboardingView.vue</code> — 主视图，用 <code>v-if currentStep</code> 切换 3 个 StepXxx</li>
+    <li><code>StepIdentity.vue</code> / <code>StepBody.vue</code> / <code>StepGoal.vue</code></li>
+    <li><code>OnboardingSuccess.vue</code> — 完成庆祝 + 跳转</li>
+    <li>状态存 Pinia store <code>useOnboarding()</code>，提交时一次性 PATCH</li>
+  </ul>
+</div>
+
+</body>
+</html>
