@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>FitCoach · 首页改版（Keep 风）</title>
+<style>
+  :root {
+    --primary: #3B82F6;
+    --primary-dark: #2563EB;
+    --primary-light: #DBEAFE;
+    --success: #58CC02;
+    --success-light: #D7F7B4;
+    --success-dark: #46A302;
+    --warning: #FFC800;
+    --warning-light: #FFF4CC;
+    --danger: #FF4B4B;
+    --danger-light: #FFE4E4;
+    --purple: #CE82FF;
+    --purple-light: #F3E8FF;
+    --pink: #FF9ED2;
+    --orange: #FF9D00;
+    --carbs: #FFA347;      /* 碳水 */
+    --protein: #58CC02;    /* 蛋白质 */
+    --fat: #60A5FA;        /* 脂肪 */
+    --water: #4FD1C5;
+    --bg: #FFFBF5;
+    --surface: #FFFFFF;
+    --border: #E8E8E8;
+    --text: #2C2C2C;
+    --text-sub: #777;
+    --text-light: #AAA;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --radius-lg: 24px;
+    --shadow-sm: 0 2px 0 var(--border);
+    --shadow-md: 0 4px 0 var(--border);
+    --shadow-card: 0 4px 20px rgba(44, 44, 44, 0.06);
+    --shadow-primary: 0 4px 0 var(--primary-dark);
+    --shadow-success: 0 4px 0 var(--success-dark);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'PingFang SC', -apple-system, 'Nunito', sans-serif;
+    background: linear-gradient(180deg, #FFFBF5 0%, #FFF4E8 100%);
+    color: var(--text);
+    padding: 40px 20px;
+    min-height: 100vh;
+  }
+  h1.page-title { font-size: 26px; text-align: center; margin-bottom: 8px; }
+  p.page-sub { text-align: center; color: var(--text-sub); margin-bottom: 40px; }
+
+  .canvas {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, 390px);
+    gap: 40px;
+    justify-content: center;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+
+  .phone {
+    width: 390px;
+    background: var(--surface);
+    border: 3px solid var(--text);
+    border-radius: 36px;
+    box-shadow: 0 8px 0 rgba(44, 44, 44, 0.12), 0 20px 60px rgba(44, 44, 44, 0.15);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 820px;
+    position: relative;
+  }
+  .phone-label {
+    position: absolute;
+    top: -36px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text);
+    color: #fff;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  /* 状态栏 */
+  .statusbar {
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    font-size: 13px;
+    font-weight: 700;
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .statusbar .right { display: flex; gap: 4px; align-items: center; font-size: 11px; }
+
+  /* 顶部日期切换 */
+  .appbar {
+    padding: 10px 20px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .appbar .back {
+    width: 36px; height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    color: var(--text);
+    cursor: pointer;
+  }
+  .date-switcher {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-size: 14px;
+    font-weight: 800;
+  }
+  .date-switcher button {
+    background: none;
+    border: 0;
+    color: var(--text-sub);
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .appbar .actions {
+    display: flex;
+    gap: 10px;
+    font-size: 20px;
+    color: var(--text);
+  }
+  .appbar .actions span { cursor: pointer; }
+
+  /* 内容滚动区 */
+  .screen {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 16px 100px;
+    background: var(--bg);
+    -webkit-overflow-scrolling: touch;
+  }
+  .screen::-webkit-scrollbar { display: none; }
+
+  /* 顶部评分卡 */
+  .score-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 20px 16px 14px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow-card);
+    text-align: center;
+  }
+  .score-ring {
+    width: 180px;
+    height: 110px;
+    margin: 0 auto;
+    position: relative;
+  }
+  .score-ring svg { width: 100%; height: 100%; }
+  .score-center {
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    text-align: center;
+  }
+  .score-emoji { font-size: 36px; display: block; }
+  .score-cat { font-size: 13px; color: var(--success); font-weight: 800; margin-top: 2px; }
+  .score-value {
+    font-size: 44px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    margin-top: -14px;
+    display: block;
+  }
+  .score-value .unit {
+    font-size: 14px;
+    color: var(--text-sub);
+    font-weight: 500;
+    margin-left: 4px;
+  }
+  .score-info {
+    display: inline-block;
+    width: 14px; height: 14px;
+    background: var(--border);
+    color: var(--text-sub);
+    border-radius: 50%;
+    font-size: 10px;
+    line-height: 14px;
+    vertical-align: top;
+    margin-left: 2px;
+  }
+  .nutrient-strip {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 4px 0;
+    margin-top: 8px;
+    border-top: 1px dashed var(--border);
+    gap: 6px;
+  }
+  .nut-item {
+    flex: 1;
+    text-align: center;
+    position: relative;
+  }
+  .nut-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: -3px;
+    top: 12px;
+    bottom: 0;
+    width: 1px;
+    background: var(--border);
+  }
+  .nut-label {
+    font-size: 12px;
+    color: var(--text-sub);
+    display: block;
+  }
+  .nut-status {
+    font-size: 12px;
+    font-weight: 800;
+    margin-top: 2px;
+    display: inline-block;
+  }
+  .nut-status.low { color: var(--warning); }
+  .nut-status.lack { color: var(--danger); }
+  .nut-status.ok { color: var(--success); }
+  .nut-status.high { color: var(--orange); }
+
+  /* AI 洞察 */
+  .ai-insight {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow-card);
+    position: relative;
+    overflow: hidden;
+  }
+  .ai-insight::before {
+    content: '';
+    position: absolute;
+    top: -20px; right: -20px;
+    width: 80px; height: 80px;
+    background: radial-gradient(circle, var(--purple-light) 0%, transparent 70%);
+  }
+  .ai-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--purple);
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .ai-insight h3 {
+    font-size: 17px;
+    line-height: 1.4;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 16px;
+    position: relative;
+  }
+  .ai-action-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+  }
+  .ai-mascot {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #FFEEEE 0%, #FFD5D5 100%);
+    border: 2px solid var(--pink);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .ai-mascot img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    object-position: top center;
+  }
+  .ai-mascot.fallback { display: flex; align-items: center; justify-content: center; font-size: 24px; }
+  .ai-action-txt { flex: 1; font-size: 13px; }
+  .ai-action-txt .main { font-weight: 800; }
+  .ai-action-txt .sub { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
+  .ai-btn {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    border: 2px solid var(--primary);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 2px 0 var(--primary);
+  }
+
+  /* 通用数据卡 */
+  .data-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow-card);
+  }
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .card-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 800;
+  }
+  .card-title .emoji { font-size: 18px; }
+  .card-head .arrow {
+    color: var(--text-light);
+    font-size: 18px;
+  }
+
+  /* 热量仪表盘 */
+  .cal-dashboard {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr 1fr;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+  }
+  .cal-side {
+    text-align: center;
+  }
+  .cal-side .lbl {
+    font-size: 12px;
+    color: var(--text-sub);
+    margin-bottom: 6px;
+  }
+  .cal-side .val {
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+  .cal-side .unit {
+    font-size: 11px;
+    color: var(--text-sub);
+    margin-top: 2px;
+  }
+  .cal-center {
+    text-align: center;
+    position: relative;
+  }
+  .cal-center svg { width: 120px; height: 76px; }
+  .cal-center .big {
+    position: absolute;
+    top: 20px;
+    left: 0; right: 0;
+    text-align: center;
+  }
+  .cal-center .big .num {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--text);
+  }
+  .cal-center .big .lbl {
+    font-size: 10px;
+    color: var(--text-sub);
+    margin-top: 2px;
+  }
+  .cal-center .big .sub {
+    font-size: 10px;
+    color: var(--text-light);
+    margin-top: 1px;
+  }
+
+  /* 营养成分进度条 */
+  .nut-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .nut-cell .nut-head {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .nut-cell .nut-nums {
+    font-size: 12px;
+    color: var(--text-sub);
+    margin-bottom: 8px;
+  }
+  .nut-cell .nut-nums .cur { color: var(--text); font-weight: 800; font-size: 15px; }
+  .nut-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .nut-fill {
+    height: 100%;
+    border-radius: 999px;
+    width: 0%;
+  }
+  .nut-fill.carbs { background: var(--carbs); }
+  .nut-fill.protein { background: var(--protein); }
+  .nut-fill.fat { background: var(--fat); }
+
+  /* 环形饼图行 */
+  .donut-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 20px;
+    padding: 8px 4px 4px;
+  }
+  .donut-legend .leg-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  .leg-dot {
+    width: 10px; height: 10px;
+    border-radius: 3px;
+  }
+  .leg-dot.carbs { background: var(--carbs); }
+  .leg-dot.protein { background: var(--protein); }
+  .leg-dot.fat { background: var(--fat); }
+  .leg-lbl { flex: 1; color: var(--text); font-weight: 600; }
+  .leg-pct { color: var(--text-sub); font-weight: 700; }
+
+  /* 饮水 */
+  .water-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 4px 4px;
+  }
+  .water-left { flex: 1; }
+  .water-left .val {
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--water);
+    letter-spacing: -0.02em;
+  }
+  .water-left .val .unit {
+    font-size: 12px;
+    color: var(--text-sub);
+    font-weight: 500;
+    margin-left: 4px;
+  }
+  .water-cups {
+    display: flex;
+    gap: 4px;
+    margin-top: 10px;
+  }
+  .cup {
+    width: 22px; height: 28px;
+    border: 2px solid var(--water);
+    border-radius: 4px 4px 8px 8px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cup.filled::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 100%;
+    background: linear-gradient(180deg, #B2F5EA, var(--water));
+  }
+  .water-right svg {
+    width: 72px;
+    height: 72px;
+  }
+
+  /* 训练计划卡 */
+  .workout-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 4px 2px 2px;
+  }
+  .workout-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    transition: all 0.15s;
+  }
+  .workout-item.done {
+    background: #F0FDF4;
+    border-color: #BBF7D0;
+  }
+  .workout-item .wi-icon {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    background: var(--primary-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .workout-item.strength .wi-icon { background: #FEE2E2; }
+  .workout-item.cardio   .wi-icon { background: #DBEAFE; }
+  .workout-item.stretch  .wi-icon { background: #FEF3C7; }
+  .workout-item .wi-main {
+    flex: 1;
+    min-width: 0;
+  }
+  .workout-item .wi-name {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+  .workout-item .wi-meta {
+    font-size: 11px;
+    color: var(--text-sub);
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .workout-item .wi-meta .dot {
+    width: 3px; height: 3px;
+    border-radius: 50%;
+    background: var(--text-light);
+  }
+  .workout-item .wi-badge {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+  .workout-item .wi-badge.todo {
+    color: var(--primary);
+    background: var(--primary-light);
+  }
+  .workout-item .wi-badge.done {
+    color: var(--success);
+    background: #DCFCE7;
+  }
+  .workout-item .wi-check {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--success);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 900;
+    flex-shrink: 0;
+  }
+  .workout-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--border);
+  }
+  .workout-summary .text {
+    font-size: 12px;
+    color: var(--text-sub);
+  }
+  .workout-summary .text strong {
+    color: var(--success);
+    font-weight: 800;
+  }
+  .workout-start {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 7px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+  }
+
+  /* 空状态 */
+  .empty-state {
+    text-align: center;
+    padding: 30px 20px;
+    color: var(--text-sub);
+  }
+  .empty-state .mi {
+    font-size: 36px;
+    margin-bottom: 10px;
+  }
+  .empty-state .main {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .empty-state .sub {
+    font-size: 12px;
+    color: var(--text-sub);
+  }
+
+  /* 底部 CTA（浮动在底部） */
+  .cta-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0; right: 0;
+    padding: 10px 16px 14px;
+    background: linear-gradient(180deg, rgba(255, 251, 245, 0) 0%, var(--bg) 40%);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    pointer-events: none;
+  }
+  .cta-bar > * { pointer-events: auto; }
+  .cta-mascot {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #DBEAFE 0%, #BFDBFE 100%);
+    border: 3px solid var(--primary);
+    box-shadow: var(--shadow-primary);
+    overflow: hidden;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .cta-mascot img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+  .cta-mascot.fallback { display: flex; align-items: center; justify-content: center; font-size: 28px; }
+  .cta-add {
+    flex: 1;
+    padding: 16px;
+    border: none;
+    border-radius: 999px;
+    background: var(--success);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    box-shadow: var(--shadow-success);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.1s;
+  }
+  .cta-add:active { transform: translateY(2px); box-shadow: 0 0 0 var(--success-dark); }
+  .cta-add .plus { font-size: 18px; }
+
+  /* ===== 外部说明 ===== */
+  .doc {
+    max-width: 1200px;
+    margin: 60px auto 20px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 30px;
+    box-shadow: var(--shadow-md);
+  }
+  .doc h2 { font-size: 20px; margin-bottom: 16px; color: var(--primary-dark); }
+  .doc h3 { font-size: 14px; color: var(--text-sub); margin: 16px 0 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .doc ul { font-size: 14px; line-height: 1.8; padding-left: 20px; }
+  .doc table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
+  .doc th, .doc td { padding: 10px; border-bottom: 1px solid var(--border); text-align: left; }
+  .doc th { background: var(--primary-light); font-weight: 700; }
+  .doc .cite { background: #FEF3C7; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<h1 class="page-title">🏠 FitCoach 首页改版 · Keep 风</h1>
+<p class="page-sub">单日切换 · 环形评分 · AI 洞察卡 · 数据堆 · Momo 浮动 CTA</p>
+
+<div class="canvas">
+
+  <!-- ============ 版本 A：有数据状态（主稿） ============ -->
+  <div class="phone">
+    <div class="phone-label">版本 A · 有数据状态</div>
+
+    <div class="statusbar">
+      <span>21:13</span>
+      <div class="right">●●● 📶 🔋</div>
+    </div>
+
+    <div class="appbar">
+      <span class="back">‹</span>
+      <div class="date-switcher">
+        <button>‹</button>
+        <span>今日</span>
+        <button>›</button>
+      </div>
+      <div class="actions">
+        <span>⌚</span>
+        <span>✎</span>
+      </div>
+    </div>
+
+    <div class="screen">
+      <!-- 顶部评分卡 -->
+      <div class="score-card">
+        <div class="score-ring">
+          <!--
+            半圆进度条：
+            - circle r=80，圆周 = 2πr ≈ 502.65，半圆周 = πr ≈ 251.33
+            - transform rotate(180) 让起点在左边、顺时针走上半圆
+            - stroke-dasharray="251.33 502.65" 让描边只画半圆的长度
+            - 进度条 stroke-dasharray="A B" 中 A = 半圆周 × 百分比
+          -->
+          <svg viewBox="0 0 200 110">
+            <defs>
+              <linearGradient id="scoreGrad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" stop-color="#58CC02"/>
+                <stop offset="1" stop-color="#A3E635"/>
+              </linearGradient>
+            </defs>
+            <g transform="translate(100 100) rotate(180)">
+              <!-- 背景半圆 -->
+              <circle r="80" cx="0" cy="0" fill="none"
+                      stroke="#E8E8E8" stroke-width="12" stroke-linecap="round"
+                      stroke-dasharray="251.33 502.65"/>
+              <!-- 进度半圆（82%） -->
+              <circle r="80" cx="0" cy="0" fill="none"
+                      stroke="url(#scoreGrad)" stroke-width="12" stroke-linecap="round"
+                      stroke-dasharray="206.09 502.65"/>
+            </g>
+          </svg>
+          <div class="score-center">
+            <div class="score-emoji">🥗</div>
+            <div class="score-cat">饮食得分</div>
+          </div>
+        </div>
+        <div>
+          <span class="score-value">82<span class="unit">分</span></span>
+          <span class="score-info">i</span>
+        </div>
+
+        <div class="nutrient-strip">
+          <div class="nut-item">
+            <span class="nut-label">饮食摄入</span>
+            <span class="nut-status ok">达标</span>
+          </div>
+          <div class="nut-item">
+            <span class="nut-label">碳水</span>
+            <span class="nut-status low">偏低</span>
+          </div>
+          <div class="nut-item">
+            <span class="nut-label">蛋白质</span>
+            <span class="nut-status ok">达标</span>
+          </div>
+          <div class="nut-item">
+            <span class="nut-label">脂肪</span>
+            <span class="nut-status high">偏高</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI 洞察卡 -->
+      <div class="ai-insight">
+        <div class="ai-tag">✨ AI 洞察</div>
+        <h3>今天蛋白质吃得不错，<br>但油脂偏多，晚餐少油试试？</h3>
+        <div class="ai-action-row">
+          <div class="ai-mascot">
+            <img src="./assets/momo-avatar.png" alt="Momo" onerror="this.parentNode.classList.add('fallback'); this.remove(); this.parentNode.textContent='💁‍♀️'">
+          </div>
+          <div class="ai-action-txt">
+            <div class="main">Momo 建议</div>
+            <div class="sub">晚餐换成清蒸鱼或鸡胸肉</div>
+          </div>
+          <button class="ai-btn">去问 Momo →</button>
+        </div>
+      </div>
+
+      <!-- 饮食摄入卡 -->
+      <div class="data-card">
+        <div class="card-head">
+          <div class="card-title"><span class="emoji">🍱</span>饮食摄入</div>
+          <span class="arrow">›</span>
+        </div>
+        <div class="cal-dashboard">
+          <div class="cal-side">
+            <div class="lbl">饮食摄入</div>
+            <div class="val" style="color: var(--carbs);">1253</div>
+            <div class="unit">千卡</div>
+          </div>
+          <div class="cal-center">
+            <!--
+              小半圆：r=60，半圆周 = π·60 ≈ 188.5
+              还可摄入 287 / 推荐 1540 ≈ 18.6%，但视觉上这里一般显示"已摄入占比"
+              按 Keep 的做法：绿色部分表示"已消耗/摄入占推荐的比例"
+              1253 / 1540 ≈ 81% → 进度 = 188.5 × 0.81 ≈ 152.7
+            -->
+            <svg viewBox="0 0 160 90">
+              <g transform="translate(80 80) rotate(180)">
+                <circle r="60" cx="0" cy="0" fill="none"
+                        stroke="#E8E8E8" stroke-width="10" stroke-linecap="round"
+                        stroke-dasharray="188.5 377"/>
+                <circle r="60" cx="0" cy="0" fill="none"
+                        stroke="#58CC02" stroke-width="10" stroke-linecap="round"
+                        stroke-dasharray="152.7 377"/>
+              </g>
+            </svg>
+            <div class="big">
+              <div class="num">287</div>
+              <div class="lbl">还可摄入</div>
+              <div class="sub">推荐 1540</div>
+            </div>
+          </div>
+          <div class="cal-side">
+            <div class="lbl">运动消耗</div>
+            <div class="val" style="color: var(--primary);">342</div>
+            <div class="unit">千卡</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 营养成分卡 -->
+      <div class="data-card">
+        <div class="card-head">
+          <div class="card-title"><span class="emoji">🥦</span>营养成分</div>
+          <span class="arrow">›</span>
+        </div>
+
+        <div class="nut-grid">
+          <div class="nut-cell">
+            <div class="nut-head">碳水</div>
+            <div class="nut-nums"><span class="cur">142</span> / 178 克</div>
+            <div class="nut-bar"><div class="nut-fill carbs" style="width:80%"></div></div>
+          </div>
+          <div class="nut-cell">
+            <div class="nut-head">蛋白质</div>
+            <div class="nut-nums"><span class="cur">68</span> / 71 克</div>
+            <div class="nut-bar"><div class="nut-fill protein" style="width:95%"></div></div>
+          </div>
+          <div class="nut-cell">
+            <div class="nut-head">脂肪</div>
+            <div class="nut-nums"><span class="cur">58</span> / 48 克</div>
+            <div class="nut-bar"><div class="nut-fill fat" style="width:100%"></div></div>
+          </div>
+        </div>
+
+        <div class="donut-row">
+          <div class="donut-legend">
+            <div class="leg-row">
+              <span class="leg-dot carbs"></span>
+              <span class="leg-lbl">碳水</span>
+              <span class="leg-pct">53.0%</span>
+            </div>
+            <div class="leg-row">
+              <span class="leg-dot protein"></span>
+              <span class="leg-lbl">蛋白质</span>
+              <span class="leg-pct">25.4%</span>
+            </div>
+            <div class="leg-row">
+              <span class="leg-dot fat"></span>
+              <span class="leg-lbl">脂肪</span>
+              <span class="leg-pct">21.6%</span>
+            </div>
+          </div>
+          <div>
+            <svg viewBox="0 0 100 100" width="90" height="90">
+              <circle cx="50" cy="50" r="38" fill="none" stroke="#FFF4CC" stroke-width="18"/>
+              <!-- 碳水 53% → 191 周长 -->
+              <circle cx="50" cy="50" r="38" fill="none" stroke="#FFA347" stroke-width="18"
+                      stroke-dasharray="126 239" stroke-dashoffset="0" transform="rotate(-90 50 50)"/>
+              <!-- 蛋白质 25.4% → 60 -->
+              <circle cx="50" cy="50" r="38" fill="none" stroke="#58CC02" stroke-width="18"
+                      stroke-dasharray="60 239" stroke-dashoffset="-126" transform="rotate(-90 50 50)"/>
+              <!-- 脂肪 21.6% → 51 -->
+              <circle cx="50" cy="50" r="38" fill="none" stroke="#60A5FA" stroke-width="18"
+                      stroke-dasharray="52 239" stroke-dashoffset="-186" transform="rotate(-90 50 50)"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- 饮水卡 -->
+      <div class="data-card">
+        <div class="card-head">
+          <div class="card-title"><span class="emoji">💧</span>饮水</div>
+          <span class="arrow">›</span>
+        </div>
+        <div class="water-card">
+          <div class="water-left">
+            <div class="val">1200<span class="unit">/ 1600 毫升</span></div>
+            <div class="water-cups">
+              <div class="cup filled"></div>
+              <div class="cup filled"></div>
+              <div class="cup filled"></div>
+              <div class="cup filled"></div>
+              <div class="cup filled"></div>
+              <div class="cup filled"></div>
+              <div class="cup"></div>
+              <div class="cup"></div>
+            </div>
+          </div>
+          <div class="water-right">
+            <svg viewBox="0 0 72 72">
+              <rect x="22" y="18" width="28" height="46" rx="6" fill="#DBEAFE" stroke="#4FD1C5" stroke-width="2.5"/>
+              <rect x="22" y="38" width="28" height="26" rx="6" fill="#4FD1C5"/>
+              <rect x="30" y="8" width="12" height="12" rx="2" fill="#4FD1C5"/>
+              <circle cx="42" cy="30" r="1.5" fill="#fff"/>
+              <circle cx="30" cy="46" r="1.5" fill="#fff"/>
+              <circle cx="36" cy="52" r="2" fill="#fff" opacity="0.7"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- 今日训练卡 -->
+      <div class="data-card">
+        <div class="card-head">
+          <div class="card-title"><span class="emoji">🏋️</span>今日训练</div>
+          <span class="arrow">›</span>
+        </div>
+        <div class="workout-list">
+          <!-- 已完成 -->
+          <div class="workout-item strength done">
+            <div class="wi-icon">💪</div>
+            <div class="wi-main">
+              <div class="wi-name">力量训练 · 腿</div>
+              <div class="wi-meta">
+                <span>深蹲 4×12</span>
+                <span class="dot"></span>
+                <span>硬拉 4×10</span>
+                <span class="dot"></span>
+                <span>45 分钟</span>
+              </div>
+            </div>
+            <div class="wi-check">✓</div>
+          </div>
+          <!-- 待完成 -->
+          <div class="workout-item cardio">
+            <div class="wi-icon">🏃</div>
+            <div class="wi-main">
+              <div class="wi-name">有氧 · 跑步机</div>
+              <div class="wi-meta">
+                <span>中强度</span>
+                <span class="dot"></span>
+                <span>30 分钟</span>
+                <span class="dot"></span>
+                <span>目标心率 140</span>
+              </div>
+            </div>
+            <span class="wi-badge todo">去训练</span>
+          </div>
+          <!-- 待完成 · 拉伸 -->
+          <div class="workout-item stretch">
+            <div class="wi-icon">🧘</div>
+            <div class="wi-main">
+              <div class="wi-name">拉伸放松</div>
+              <div class="wi-meta">
+                <span>全身</span>
+                <span class="dot"></span>
+                <span>10 分钟</span>
+              </div>
+            </div>
+            <span class="wi-badge todo">去训练</span>
+          </div>
+        </div>
+        <div class="workout-summary">
+          <div class="text">今日 <strong>1 / 3 完成</strong> · 预计消耗 420 千卡</div>
+          <button class="workout-start">开始训练</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 浮动 CTA -->
+    <div class="cta-bar">
+      <div class="cta-mascot">
+        <img src="./assets/momo-avatar.png" alt="Momo" onerror="this.parentNode.classList.add('fallback'); this.remove(); this.parentNode.textContent='💁‍♀️'">
+      </div>
+      <button class="cta-add">
+        <span class="plus">+</span>添加数据
+      </button>
+    </div>
+  </div>
+
+  <!-- ============ 版本 B：无数据状态 ============ -->
+  <div class="phone">
+    <div class="phone-label">版本 B · 空数据状态（新用户）</div>
+
+    <div class="statusbar">
+      <span>21:13</span>
+      <div class="right">●●● 📶 🔋</div>
+    </div>
+
+    <div class="appbar">
+      <span class="back">‹</span>
+      <div class="date-switcher">
+        <button>‹</button>
+        <span>今日</span>
+        <button>›</button>
+      </div>
+      <div class="actions">
+        <span>⌚</span>
+        <span>✎</span>
+      </div>
+    </div>
+
+    <div class="screen">
+      <!-- 顶部评分卡（空） -->
+      <div class="score-card">
+        <div class="score-ring">
+          <svg viewBox="0 0 200 110">
+            <g transform="translate(100 100) rotate(180)">
+              <circle r="80" cx="0" cy="0" fill="none"
+                      stroke="#E8E8E8" stroke-width="12" stroke-linecap="round"
+                      stroke-dasharray="251.33 502.65"/>
+            </g>
+          </svg>
+          <div class="score-center">
+            <div class="score-emoji" style="color: var(--text-light);">🍽️</div>
+            <div class="score-cat" style="color: var(--text-light);">饮食得分</div>
+          </div>
+        </div>
+        <div>
+          <span class="score-value" style="color: var(--text-light);">— —<span class="unit">分</span></span>
+        </div>
+
+        <div class="nutrient-strip">
+          <div class="nut-item">
+            <span class="nut-label">饮食摄入</span>
+            <span class="nut-status lack">暂无</span>
+          </div>
+          <div class="nut-item">
+            <span class="nut-label">碳水</span>
+            <span class="nut-status lack">暂无</span>
+          </div>
+          <div class="nut-item">
+            <span class="nut-label">蛋白质</span>
+            <span class="nut-status lack">暂无</span>
+          </div>
+          <div class="nut-item">
+            <span class="nut-label">脂肪</span>
+            <span class="nut-status lack">暂无</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI 引导卡（代替洞察卡） -->
+      <div class="ai-insight">
+        <div class="ai-tag">✨ AI 洞察</div>
+        <h3>记录今日的饮食，<br>获取饮食结构详细分析</h3>
+        <div class="ai-action-row">
+          <div class="ai-mascot">
+            <img src="./assets/momo-avatar.png" alt="Momo" onerror="this.parentNode.classList.add('fallback'); this.remove(); this.parentNode.textContent='💁‍♀️'">
+          </div>
+          <div class="ai-action-txt">
+            <div class="main">加餐</div>
+            <div class="sub">记录今天的第一餐</div>
+          </div>
+          <button class="ai-btn">+ 记录</button>
+        </div>
+      </div>
+
+      <!-- 热量仪表盘（0 状态） -->
+      <div class="data-card">
+        <div class="card-head">
+          <div class="card-title"><span class="emoji">🍱</span>饮食摄入</div>
+          <span class="arrow">›</span>
+        </div>
+        <div class="cal-dashboard">
+          <div class="cal-side">
+            <div class="lbl">饮食摄入</div>
+            <div class="val" style="color: var(--text-light);">0</div>
+            <div class="unit">千卡</div>
+          </div>
+          <div class="cal-center">
+            <svg viewBox="0 0 160 90">
+              <g transform="translate(80 80) rotate(180)">
+                <circle r="60" cx="0" cy="0" fill="none"
+                        stroke="#E8E8E8" stroke-width="10" stroke-linecap="round"
+                        stroke-dasharray="188.5 377"/>
+              </g>
+            </svg>
+            <div class="big">
+              <div class="num">1540</div>
+              <div class="lbl">还可摄入</div>
+              <div class="sub">推荐摄入 1540</div>
+            </div>
+          </div>
+          <div class="cal-side">
+            <div class="lbl">运动消耗</div>
+            <div class="val" style="color: var(--text-light);">0</div>
+            <div class="unit">千卡</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 空数据提示 -->
+      <div class="data-card">
+        <div class="card-head">
+          <div class="card-title"><span class="emoji">🥦</span>营养成分</div>
+        </div>
+        <div class="empty-state">
+          <div class="mi">🌱</div>
+          <div class="main">暂无数据</div>
+          <div class="sub">点击下方「添加数据」记录今天的第一餐吧</div>
+        </div>
+      </div>
+
+      <!-- 今日训练卡（空） -->
+      <div class="data-card">
+        <div class="card-head">
+          <div class="card-title"><span class="emoji">🏋️</span>今日训练</div>
+        </div>
+        <div class="empty-state">
+          <div class="mi">🏃‍♀️</div>
+          <div class="main">还没有训练计划</div>
+          <div class="sub">去问 Momo 给你安排一份今日训练吧 →</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 浮动 CTA -->
+    <div class="cta-bar">
+      <div class="cta-mascot">
+        <img src="./assets/momo-avatar.png" alt="Momo" onerror="this.parentNode.classList.add('fallback'); this.remove(); this.parentNode.textContent='💁‍♀️'">
+      </div>
+      <button class="cta-add">
+        <span class="plus">+</span>添加数据
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========== 文档说明 ========== -->
+<div class="doc">
+  <h2>📋 改版说明</h2>
+
+  <h3>致敬 Keep 的核心模式</h3>
+  <table>
+    <tr><th>模块</th><th>Keep 原设计</th><th>FitCoach 改造</th></tr>
+    <tr><td>顶部日期切换</td><td>◀ 今日 ▶ 居中药丸</td><td>保留，色调调成米白底</td></tr>
+    <tr><td>顶部评分</td><td>饮食评分半环 + 大数字</td><td>保留 + emoji 情感化（🥗 😋 🔥）</td></tr>
+    <tr><td>营养状态条</td><td>偏低 / 偏高 / 不足</td><td>保留 + 加「达标」绿色状态</td></tr>
+    <tr><td>AI 洞察卡</td><td>紫色 ✨ 图标</td><td><strong>保留 + 嵌入 Momo 头像 + 「去问 Momo」按钮</strong>（直连 Chat）</td></tr>
+    <tr><td>热量仪表盘</td><td>摄入 / 还可摄入 / 消耗</td><td>保留，用 Duolingo 色对应</td></tr>
+    <tr><td>营养成分进度条</td><td>横条 + 环形占比</td><td>保留，碳水橙/蛋白绿/脂肪蓝</td></tr>
+    <tr><td>饮水</td><td>水瓶插画 + 大数字</td><td>保留 + 加<strong>8 格杯子条</strong>（更游戏化）</td></tr>
+    <tr><td>减重计划广告位</td><td>橙色 Banner</td><td><strong>去掉</strong>（Momo 浮动 CTA 已经承载了引导作用）</td></tr>
+    <tr><td>添加数据按钮</td><td>底部绿色大圆角</td><td>保留 + <strong>左侧挂 Momo 浮球</strong>（点 Momo 直通 Chat）</td></tr>
+  </table>
+
+  <h3>FitCoach 独有的差异化</h3>
+  <ul>
+    <li><strong>Momo 浮动 CTA</strong>：底部按钮左侧有一个 Momo 圆球，点她直接跳 /chat（Keep 没有 AI 教练入口，这是我们的核心差异点）</li>
+    <li><strong>AI 洞察卡集成 Momo</strong>：Keep 的 AI 洞察是冷冰冰文字，我们加头像 + 第一人称台词 + 「去问 Momo」直通按钮</li>
+    <li><strong>营养状态加「达标」</strong>：Keep 只有负向标签（偏低/偏高/不足），我们加正向反馈让用户有成就感</li>
+    <li><strong>8 格杯子条</strong>：饮水视觉化到杯子级，比 Keep 的"大数字 + 水瓶图"更有游戏感</li>
+    <li><strong>空状态引导</strong>：新用户看到 Momo + 「去问 Momo」而不是"开启减重计划"广告</li>
+  </ul>
+
+  <h3>字段映射（对接 FitCoach 后端）</h3>
+  <ul>
+    <li>顶部评分：按营养均衡度 + 热量达标度算权重，具体公式后端定</li>
+    <li>饮食摄入 / 运动消耗：<code>GET /diet-logs/today</code> + <code>GET /workout-logs/today</code> 求和</li>
+    <li>推荐摄入：<code>GET /profile</code> 返回的 TDEE × 目标系数（减脂 0.85 / 增肌 1.1 / 塑形 1.0）</li>
+    <li>碳水/蛋白质/脂肪克数：diet-logs 每条带 nutrition，服务端 aggregate</li>
+    <li>AI 洞察文案：新接口 <code>GET /insight/today</code>，后端调 LLM 生成（可以每天只调 1 次缓存）</li>
+    <li>饮水：新 model <code>water_logs</code> 需要加（当前后端没有，M3 没覆盖）</li>
+  </ul>
+
+  <h3>组件拆分建议（Vue）</h3>
+  <ul>
+    <li><code>HomeView.vue</code>（主容器）</li>
+    <li><code>DateSwitcher.vue</code>（日期切换）</li>
+    <li><code>DietScoreCard.vue</code>（顶部评分 + 营养状态条）</li>
+    <li><code>AiInsightCard.vue</code>（AI 洞察 + Momo 引导）</li>
+    <li><code>CalorieGauge.vue</code>（热量仪表盘，复用 Keep 的三栏布局）</li>
+    <li><code>NutrientCard.vue</code>（碳水/蛋白/脂肪进度 + 饼图）</li>
+    <li><code>WaterCard.vue</code>（饮水杯子条）</li>
+    <li><code>FloatingCta.vue</code>（Momo 浮球 + 添加按钮）</li>
+  </ul>
+
+  <h3>落地路线图</h3>
+  <ul>
+    <li>P0 优先：日期切换 + 热量仪表盘 + Momo 浮动 CTA（骨架先搭）</li>
+    <li>P1：营养成分卡（含饼图） + AI 洞察卡 → 后端需补 insight 接口</li>
+    <li>P2：饮水 → 后端需加 water_logs model</li>
+    <li>P3：顶部评分算法 → 需要定义评分公式</li>
+  </ul>
+</div>
+
+</body>
+</html>
