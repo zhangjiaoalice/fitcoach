@@ -65,6 +65,92 @@ const inputText = ref("");
 const sending = ref(false);
 const scrollRef = ref<HTMLElement | null>(null);
 
+// ─────────────────────────────────────────────
+// 快捷工具栏：点击弹层快速记录饮食/体重/饮水/训练
+// ─────────────────────────────────────────────
+interface QuickTool {
+  key: "diet" | "weight" | "water" | "workout" | "plan";
+  emoji: string;
+  label: string;
+  placeholder: string;
+  color: string;
+  prefix: string; // 发消息时自动拼在前面，方便 Momo 识别意图
+}
+
+const quickTools: QuickTool[] = [
+  {
+    key: "diet",
+    emoji: "🍱",
+    label: "记饮食",
+    placeholder: "例：我今天中午吃了 1 个汉堡",
+    color: "#FF9F6B",
+    prefix: "帮我记录饮食：",
+  },
+  {
+    key: "weight",
+    emoji: "⚖️",
+    label: "记体重",
+    placeholder: "例：今早体重 67.5 公斤",
+    color: "#EF4444",
+    prefix: "帮我记录体重：",
+  },
+  {
+    key: "water",
+    emoji: "💧",
+    label: "记饮水",
+    placeholder: "例：刚喝了 500 毫升白开水",
+    color: "#14B8A6",
+    prefix: "帮我记录饮水：",
+  },
+  {
+    key: "workout",
+    emoji: "🏋️",
+    label: "记训练",
+    placeholder: "例：今天跑步 30 分钟，中强度",
+    color: "#3B82F6",
+    prefix: "帮我记录训练：",
+  },
+  {
+    key: "plan",
+    emoji: "📋",
+    label: "生成计划",
+    placeholder: "例：帮我做一份一周减脂训练计划",
+    color: "#8B5CF6",
+    prefix: "",
+  },
+];
+
+const activeTool = ref<QuickTool | null>(null);
+const toolInput = ref("");
+
+function openTool(t: QuickTool): void {
+  activeTool.value = t;
+  toolInput.value = "";
+  // 聚焦到弹层 input（nextTick 等 DOM 挂上）
+  void nextTick(() => {
+    const el = document.getElementById(
+      "tool-sheet-input"
+    ) as HTMLInputElement | null;
+    el?.focus();
+  });
+}
+
+function closeTool(): void {
+  activeTool.value = null;
+  toolInput.value = "";
+}
+
+async function submitTool(): Promise<void> {
+  const t = activeTool.value;
+  if (!t) return;
+  const raw = toolInput.value.trim();
+  if (!raw) return;
+  // 拼上前缀送到 chat
+  inputText.value = t.prefix + raw;
+  closeTool();
+  await handleSend();
+}
+
 let nextId = 1;
 
 // ─────────────────────────────────────────────
@@ -283,7 +369,7 @@ onUnmounted(stopTyping);
         </svg>
       </button>
       <div class="title">
-        <h1>AI Coach</h1>
+        <h1>小黑米AI教练</h1>
         <p>Kimi 驱动 · 可查画像 / 饮食 / 训练 / 体重</p>
       </div>
       <Mascot type="hero" variant="avatar" :size="40" />
@@ -358,6 +444,20 @@ onUnmounted(stopTyping);
     </div>
 
     <div class="footer-btn">
+      <!-- 快捷工具栏 -->
+      <div class="toolbar">
+        <button
+          v-for="t in quickTools"
+          :key="t.key"
+          class="tool-chip"
+          :style="{ '--chip-color': t.color } as any"
+          @click="openTool(t)"
+        >
+          <span class="chip-emoji">{{ t.emoji }}</span>
+          <span class="chip-label">{{ t.label }}</span>
+        </button>
+      </div>
+
       <form class="composer" @submit.prevent="handleSend">
         <input
           v-model="inputText"
@@ -371,6 +471,55 @@ onUnmounted(stopTyping);
         </button>
       </form>
     </div>
+
+    <!-- 工具弹层（底部抽屉） -->
+    <transition name="sheet">
+      <div v-if="activeTool" class="tool-mask" @click.self="closeTool">
+        <div class="tool-sheet">
+          <div class="sheet-head">
+            <span
+              class="sheet-emoji"
+              :style="{ background: activeTool.color + '22' }"
+            >
+              {{ activeTool.emoji }}
+            </span>
+            <span class="sheet-title">{{ activeTool.label }}</span>
+            <button class="sheet-close" @click="closeTool">✕</button>
+          </div>
+
+          <!-- 可选图片占位，MVP 不实现，保持 UI 一致 -->
+          <div v-if="activeTool.key === 'diet'" class="sheet-photo">
+            <span class="photo-ic">📷</span>
+            <span class="photo-tip">添加食物和饮食照片</span>
+          </div>
+
+          <form class="sheet-form" @submit.prevent="submitTool">
+            <input
+              id="tool-sheet-input"
+              v-model="toolInput"
+              type="text"
+              :placeholder="activeTool.placeholder"
+              :disabled="sending"
+            />
+            <button
+              type="button"
+              class="sheet-plus"
+              @click="submitTool"
+              :disabled="!toolInput.trim() || sending"
+            >
+              <span class="plus">+</span>
+            </button>
+            <button
+              type="submit"
+              class="sheet-send"
+              :disabled="!toolInput.trim() || sending"
+            >
+              <Icon name="check" :size="18" color="#fff" :width="2.4" />
+            </button>
+          </form>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -437,7 +586,7 @@ onUnmounted(stopTyping);
   flex: 1;
   min-height: 0; /* flex 子项拿到剩余高度 + auto 滚动的关键 */
   overflow-y: auto;
-  padding: 4px 0 72px; /* 底部预留 composer 高度,消息不被挡 */
+  padding: 4px 0 130px; /* 底部预留 toolbar + composer 高度,消息不被挡 */
   -webkit-overflow-scrolling: touch;
 }
 
@@ -593,8 +742,7 @@ onUnmounted(stopTyping);
 
 .footer-btn {
   width: 100vw;
-  height: 80px;
-  padding: 12px 16px;
+  padding: 10px 16px 12px;
   border-top: 1px solid var(--glass-border);
   background: var(--brand-light);
   position: fixed;
@@ -604,14 +752,51 @@ onUnmounted(stopTyping);
   z-index: 10;
 }
 
-/* 输入框 —— fixed 定位，贴屏幕底部，不跟随滚动 */
+/* 快捷工具栏（横向滚动） */
+.toolbar {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 2px 10px;
+  margin-bottom: 2px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.toolbar::-webkit-scrollbar {
+  display: none;
+}
+
+.tool-chip {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 12px 7px 10px;
+  background: #fff;
+  border: 1.5px solid var(--glass-border);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-1);
+  cursor: pointer;
+  box-shadow: 0 2px 0 var(--glass-border);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.tool-chip:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 var(--glass-border);
+}
+.chip-emoji {
+  font-size: 16px;
+  line-height: 1;
+}
+.chip-label {
+  color: var(--chip-color, var(--text-1));
+}
+
+/* 输入框 —— 放在 footer-btn 内，toolbar 下面 */
 .composer {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 12px;
   width: 100%;
-  max-width: 384px; /* PhoneShell 内宽 = 420 - 左右 padding 18*2 */
   box-sizing: border-box;
   display: flex;
   gap: 8px;
@@ -620,7 +805,6 @@ onUnmounted(stopTyping);
   backdrop-filter: blur(10px);
   border: 1px solid var(--hairline);
   border-radius: 999px;
-  z-index: 20;
 }
 .composer input {
   flex: 1;
@@ -650,5 +834,147 @@ onUnmounted(stopTyping);
 .composer button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* ─── 工具弹层（底部抽屉） ─── */
+.tool-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(60, 60, 60, 0.4);
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.tool-sheet {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg-elevated);
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  border: 2px solid var(--glass-border);
+  border-bottom: none;
+  padding: 16px 16px 20px;
+  box-shadow: 0 -4px 0 var(--glass-border);
+}
+.sheet-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.sheet-emoji {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+.sheet-title {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-1);
+}
+.sheet-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--glass-border);
+  border: none;
+  color: var(--text-2);
+  font-size: 14px;
+  cursor: pointer;
+}
+.sheet-photo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+  background: var(--brand-light);
+  border: 1.5px dashed var(--brand);
+  border-radius: 14px;
+  margin-bottom: 14px;
+  color: var(--text-3);
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.75;
+  cursor: not-allowed; /* MVP 占位，暂不开启 */
+}
+.photo-ic { font-size: 20px; }
+
+.sheet-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 14px;
+  background: var(--bg-app);
+  border: 2px solid var(--glass-border);
+  border-radius: 999px;
+}
+.sheet-form input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  color: var(--text-1);
+  padding: 8px 0;
+}
+.sheet-form input::placeholder {
+  color: var(--text-3);
+  font-weight: 500;
+}
+.sheet-plus {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--text-2);
+  background: transparent;
+  color: var(--text-1);
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.sheet-plus:disabled,
+.sheet-send:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.sheet-send {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--brand-grad);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 弹层进出动画 */
+.sheet-enter-active,
+.sheet-leave-active {
+  transition: opacity 0.22s;
+}
+.sheet-enter-active .tool-sheet,
+.sheet-leave-active .tool-sheet {
+  transition: transform 0.26s cubic-bezier(0.3, 0.9, 0.3, 1);
+}
+.sheet-enter-from,
+.sheet-leave-to {
+  opacity: 0;
+}
+.sheet-enter-from .tool-sheet,
+.sheet-leave-to .tool-sheet {
+  transform: translateY(100%);
 }
 </style>

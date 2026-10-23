@@ -283,10 +283,10 @@ const summaryItems = [
       <!-- 空状态 -->
       <div v-if="workoutsToday.length === 0" class="workout-empty">
         <p class="we-main">还没有训练计划</p>
-        <p class="we-sub">去问 Momo 给你安排一份今日训练 →</p>
+        <p class="we-sub">去问 小黑米AI教练 给你安排一份今日训练 →</p>
         <button class="we-btn" @click="goChat">
           <Mascot type="momo" variant="avatar" :size="20" />
-          去问 Momo
+          去问 小黑米 AI 教练
         </button>
       </div>
 

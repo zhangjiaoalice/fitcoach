@@ -172,7 +172,7 @@ async function getRecord() {
     <!-- Momo 底部鼓励 -->
     <div class="encourage">
       <Mascot type="momo" variant="avatar" :size="40" />
-      <p>每天记录一点点，Momo 会越来越懂你 💪</p>
+      <p>每天记录一点点，小黑米 会越来越懂你 💪</p>
     </div>
 
     <!-- Toast -->
