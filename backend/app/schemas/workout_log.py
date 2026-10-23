@@ -7,6 +7,7 @@ class CreateWorkoutLog(BaseModel):
     duration_min: int
     intensity: str
     log_date: date
+    completed_at: datetime | None = None
     note: str | None = None
 
 class UpdateWorkoutLog(BaseModel):
@@ -15,6 +16,7 @@ class UpdateWorkoutLog(BaseModel):
     intensity: str | None = None
     note: str | None = None
     log_date: date | None = None
+    completed_at: datetime | None = None
 
 class WorkoutLogOut(BaseModel):
     model_config = ConfigDict(from_attributes=True) # 从orm对象中读取字段
@@ -24,5 +26,6 @@ class WorkoutLogOut(BaseModel):
     duration_min: int
     intensity: str
     log_date: date
+    completed_at: datetime | None = None
     created_at: datetime
     note: str | None = None
