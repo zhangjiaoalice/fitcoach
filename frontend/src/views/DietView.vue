@@ -5,9 +5,10 @@
  *   - 点击 item 跳转到具体记录子页（暂未实现，先 toast 占位）
  *   - 卡通可爱风，和 Dashboard / Onboarding 一致
  */
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import Mascot from "../components/Mascot.vue";
+import { getRecordSummary, RecordSummary } from "../api/record";
 
 const router = useRouter();
 
@@ -17,15 +18,17 @@ const today = computed(() => {
   return `${d.getMonth() + 1} 月 ${d.getDate()} 日`;
 });
 
+const summary = ref<RecordSummary | null>(null);
+
 interface RecordItem {
   key: "diet" | "workout" | "water" | "weight" | "sleep";
   emoji: string;
   label: string;
   sub: string;
-  color: string;      // 图标盒子底色
-  accent: string;     // 图标盒子描边 / 文字强调色
+  color: string; // 图标盒子底色
+  accent: string; // 图标盒子描边 / 文字强调色
   routeName?: string; // 对应子页路由名（若未实现则为空）
-  summary?: string;   // 今日摘要
+  summary?: string; // 今日摘要
 }
 
 const items: RecordItem[] = [
@@ -36,7 +39,9 @@ const items: RecordItem[] = [
     sub: "记录三餐和加餐",
     color: "#FFE5CF",
     accent: "#FF9F6B",
-    summary: "今日 1253 千卡",
+    summary: summary.value?.diet
+      ? `今日 ${summary.value.diet.kcal} 千卡`
+      : "去记录",
   },
   {
     key: "workout",
@@ -45,7 +50,9 @@ const items: RecordItem[] = [
     sub: "力量 / 有氧 / 拉伸",
     color: "#DBEAFE",
     accent: "#3B82F6",
-    summary: "今日 1 / 3 完成",
+    summary: summary.value?.workout
+      ? `今日 ${summary.value.workout.done} / ${summary.value.workout.total} 完成`
+      : "去记录",
   },
   {
     key: "water",
@@ -54,7 +61,9 @@ const items: RecordItem[] = [
     sub: "喝水量追踪",
     color: "#CCFBF1",
     accent: "#14B8A6",
-    summary: "今日 1200 / 1600 ml",
+    summary: summary.value?.water
+      ? `今日 ${summary.value.water.ml} / ${summary.value.water.target_ml} 毫升`
+      : "去记录",
   },
   {
     key: "weight",
@@ -63,7 +72,9 @@ const items: RecordItem[] = [
     sub: "每日称重记录",
     color: "#FEE2E2",
     accent: "#EF4444",
-    summary: "最近 67.8 kg",
+    summary: summary.value?.weight
+      ? `今日 ${summary.value.weight.latest_weight}kg`
+      : "去记录",
   },
   {
     key: "sleep",
@@ -72,9 +83,15 @@ const items: RecordItem[] = [
     sub: "入睡 / 睡眠时长",
     color: "#EDE9FE",
     accent: "#8B5CF6",
-    summary: "昨晚 7h32m",
+    summary: summary.value?.sleep
+      ? `今日 ${summary.value.sleep.duration_min} 小时`
+      : "去记录",
   },
 ];
+
+onMounted(async () => {
+  await getRecord();
+});
 
 // toast 轻提示
 const toastMsg = ref("");
@@ -98,6 +115,12 @@ function openRecord(item: RecordItem): void {
 
 function goChat(): void {
   router.push({ name: "chat" });
+}
+
+async function getRecord() {
+  const res = await getRecordSummary();
+  console.log("获取记录：", res);
+  summary.value = { ...res };
 }
 </script>
 
@@ -190,7 +213,7 @@ function goChat(): void {
   gap: 8px;
   padding: 11px 14px;
   margin-bottom: 14px;
-  background: linear-gradient(135deg, #F0F7FF 0%, var(--bg-elevated) 100%);
+  background: linear-gradient(135deg, #f0f7ff 0%, var(--bg-elevated) 100%);
   border: 2px solid var(--brand-light);
   border-radius: 999px;
   box-shadow: var(--shadow-sm);
