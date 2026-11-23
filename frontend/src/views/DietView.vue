@@ -8,7 +8,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import Mascot from "../components/Mascot.vue";
-import { getRecordSummary, RecordSummary } from "../api/record";
+import { getRecordSummary, type RecordSummary } from "../api/record";
 
 const router = useRouter();
 
@@ -28,69 +28,80 @@ interface RecordItem {
   color: string; // 图标盒子底色
   accent: string; // 图标盒子描边 / 文字强调色
   routeName?: string; // 对应子页路由名（若未实现则为空）
-  summary?: string; // 今日摘要
+  summary: string; // 今日摘要（有数据则显示具体值，否则 "去记录"）
 }
 
-const items: RecordItem[] = [
-  {
-    key: "diet",
-    emoji: "🍱",
-    label: "饮食",
-    sub: "记录三餐和加餐",
-    color: "#FFE5CF",
-    accent: "#FF9F6B",
-    summary: summary.value?.diet
-      ? `今日 ${summary.value.diet.kcal} 千卡`
-      : "去记录",
-  },
-  {
-    key: "workout",
-    emoji: "🏋️",
-    label: "训练",
-    sub: "力量 / 有氧 / 拉伸",
-    color: "#DBEAFE",
-    accent: "#3B82F6",
-    summary: summary.value?.workout
-      ? `今日 ${summary.value.workout.done} / ${summary.value.workout.total} 完成`
-      : "去记录",
-  },
-  {
-    key: "water",
-    emoji: "💧",
-    label: "饮水",
-    sub: "喝水量追踪",
-    color: "#CCFBF1",
-    accent: "#14B8A6",
-    summary: summary.value?.water
-      ? `今日 ${summary.value.water.ml} / ${summary.value.water.target_ml} 毫升`
-      : "去记录",
-  },
-  {
-    key: "weight",
-    emoji: "⚖️",
-    label: "体重",
-    sub: "每日称重记录",
-    color: "#FEE2E2",
-    accent: "#EF4444",
-    summary: summary.value?.weight
-      ? `今日 ${summary.value.weight.latest_weight}kg`
-      : "去记录",
-  },
-  {
-    key: "sleep",
-    emoji: "🌙",
-    label: "睡眠",
-    sub: "入睡 / 睡眠时长",
-    color: "#EDE9FE",
-    accent: "#8B5CF6",
-    summary: summary.value?.sleep
-      ? `今日 ${summary.value.sleep.duration_min} 小时`
-      : "去记录",
-  },
-];
+// items 必须是 computed —— summary 从 API 异步赋值，响应式依赖才能正确跟踪
+const items = computed<RecordItem[]>(() => {
+  const s = summary.value;
+  return [
+    {
+      key: "diet",
+      emoji: "🍱",
+      label: "饮食",
+      sub: "记录三餐和加餐",
+      color: "#FFE5CF",
+      accent: "#FF9F6B",
+      summary: s?.diet
+        ? `今日 ${s.diet.kcal} 千卡 · ${s.diet.meal_count} 餐`
+        : "去记录",
+    },
+    {
+      key: "workout",
+      emoji: "🏋️",
+      label: "训练",
+      sub: "力量 / 有氧 / 拉伸",
+      color: "#DBEAFE",
+      accent: "#3B82F6",
+      summary: s?.workout
+        ? `今日 ${s.workout.done} / ${s.workout.total} 完成`
+        : "去记录",
+    },
+    {
+      key: "water",
+      emoji: "💧",
+      label: "饮水",
+      sub: "喝水量追踪",
+      color: "#CCFBF1",
+      accent: "#14B8A6",
+      summary: s?.water
+        ? `${s.water.ml} / ${s.water.target_ml} ml`
+        : "去记录",
+    },
+    {
+      key: "weight",
+      emoji: "⚖️",
+      label: "体重",
+      sub: "每日称重记录",
+      color: "#FEE2E2",
+      accent: "#EF4444",
+      summary: s?.weight ? `最近 ${s.weight.latest_kg} kg` : "去记录",
+    },
+    {
+      key: "sleep",
+      emoji: "🌙",
+      label: "睡眠",
+      sub: "入睡 / 睡眠时长",
+      color: "#EDE9FE",
+      accent: "#8B5CF6",
+      summary: s?.sleep
+        ? `${Math.floor(s.sleep.duration_min / 60)}h${s.sleep.duration_min % 60}min`
+        : "去记录",
+    },
+  ];
+});
 
-onMounted(async () => {
-  await getRecord();
+async function fetchSummary(): Promise<void> {
+  try {
+    summary.value = await getRecordSummary();
+  } catch (err) {
+    console.warn("[record] 摘要加载失败", err);
+    // summary 保持 null，UI 自然降级显示"去记录"
+  }
+}
+
+onMounted(() => {
+  void fetchSummary();
 });
 
 // toast 轻提示
