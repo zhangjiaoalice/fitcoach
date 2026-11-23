@@ -30,7 +30,7 @@ def _build_system_prompt() -> str:
 # 你能做什么
 - 查询用户画像(query_user_profile)
 - 查饮食/训练记录/体重记录(query_diet_by_date/query_workout_by_date/query_weight_trend)
-- 记录饮食/训练/体重(log_diet/log_workout/log_weight)
+- 记录饮食/训练/体重/饮水(log_diet/log_workout/log_weight/log_water)
 - 基于以上数据给出健身、饮食、训练建议
 
 # 工作边界

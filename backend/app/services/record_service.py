@@ -3,10 +3,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from datetime import date
 
-from app.schemas.record import RecordSummary, DietSummary,  WorkoutSummary, WeightSummary
+from app.schemas.record import RecordSummary, DietSummary,  WorkoutSummary, WeightSummary, WaterSummary
 from app.services.diet_log_service import list_diet_log
 from app.services.weight_log_service import list_weight_recent
 from app.services.workout_log_service import list_workout_log
+from app.services.water_log_service import sum_water_today
 
 async def get_record_summary(db: AsyncSession, user_id: int) -> RecordSummary:
     today = date.today()
@@ -39,7 +40,10 @@ async def get_record_summary(db: AsyncSession, user_id: int) -> RecordSummary:
         weight = WeightSummary(latest_kg=latest_log.weight_kg, measured_at=latest_log.log_date)
 
     # 子任务： 饮水记录
+    total_ml = await sum_water_today(db, user_id, today)
     water = None
+    if total_ml > 0:
+        water = WaterSummary(ml=total_ml, target_ml=2000) # target_ml 先写死 2000，后续从user profile 中读取
 
     # 子任务： 睡眠
     sleep = None

@@ -16,7 +16,7 @@ class WorkoutSummary(BaseModel):
 
 class WaterSummary(BaseModel):
     """Water summary schema"""
-    ml: Decimal
+    ml: int
     target_ml: int
 
 class WeightSummary(BaseModel):

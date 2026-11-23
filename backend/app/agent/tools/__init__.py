@@ -11,3 +11,4 @@ from app.agent.tools import log_diet # noqa: F401
 from app.agent.tools import log_workout # noqa: F401
 from app.agent.tools import log_weight # noqa: F401
 from app.agent.tools import search_knowledge # noqa: F401
+from app.agent.tools import log_water # noqa: F401
