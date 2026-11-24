@@ -383,7 +383,7 @@ onUnmounted(stopTyping);
           <Mascot type="momo" variant="avatar" :size="34" class="row-avatar" />
         </div>
 
-        <!-- AI 气泡（左侧挂 Hero 头像；工具调用卡片 + 回复文本共用一个 avatar） -->
+        <!-- AI 气泡（左侧挂 Hero 头像；工具调用卡片 + 回复文本 + typing 三点共用一个 avatar） -->
         <template v-else-if="m.type === 'assistant'">
           <div class="row row-ai">
             <Mascot
@@ -416,6 +416,15 @@ onUnmounted(stopTyping);
                 <span>{{ m.text }}</span
                 ><span v-if="m.streaming" class="cursor" />
               </div>
+              <!-- 正在生成：无 text + 无工具时显示三点动画，嵌在同一个 row-main 里避免双头像 -->
+              <div
+                v-if="m.streaming && !m.text && m.toolCalls.length === 0"
+                class="typing"
+              >
+                <span class="dot" />
+                <span class="dot" />
+                <span class="dot" />
+              </div>
             </div>
           </div>
         </template>
@@ -428,19 +437,6 @@ onUnmounted(stopTyping);
           <span style="color: var(--warn)">{{ m.text }}</span>
         </div>
       </template>
-
-      <!-- 正在生成（LLM 还没出第一个 token 时，先显示三点动画） -->
-      <div
-        v-if="sending && messages[messages.length - 1]?.type === 'assistant' && !(messages[messages.length - 1] as AssistantMessage).text && (messages[messages.length - 1] as AssistantMessage).toolCalls.length === 0"
-        class="row row-ai typing-row"
-      >
-        <Mascot type="hero" variant="avatar" :size="34" class="row-avatar" />
-        <div class="typing">
-          <span class="dot" />
-          <span class="dot" />
-          <span class="dot" />
-        </div>
-      </div>
     </div>
 
     <div class="footer-btn">
@@ -638,9 +634,6 @@ onUnmounted(stopTyping);
   flex-shrink: 0;
   border: 2px solid var(--glass-border);
   background: var(--bg-elevated);
-}
-.typing-row {
-  align-items: center;
 }
 
 .tool {
