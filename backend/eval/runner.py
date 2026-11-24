@@ -16,7 +16,7 @@ from pathlib import Path
 
 import yaml
 from app.agent.loop import run_agent, _detect_crisis
-from app.db.session import async_session_maker
+from app.db.session import AsyncSessionLocal
 from app.models.user import User
 from sqlalchemy import select
 from app.agent.tools.base import AgentContext
@@ -155,7 +155,7 @@ async def main() -> None:
     print(f"📃 加载 {len(cases)} 条case")
 
     # 建db session, 拿一个测试用
-    async with async_session_maker() as db:
+    async with AsyncSessionLocal() as db:
         # 拿 user_id = 1 或任何已知用户测试
         user = (await db.execute(select(User).limit(1))).scalar_one()
 
