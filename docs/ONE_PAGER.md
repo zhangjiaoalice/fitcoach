@@ -14,13 +14,14 @@
 
 ## 核心能力
 
-| 能力 | 技术实现 | 规模 |
+| 能力 | 技术实现 | 规模 / 评估数字 |
 |---|---|---|
-| **工具调用** | 自研 Tool Loop + Kimi K3 Function Calling | 9 个 Tool（5 个写 + 4 个读） |
-| **RAG 检索** | pgvector + 智谱 embedding-3（1024 维）+ 余弦相似度 | 9 段医学指南入库 |
+| **工具调用** | 自研 Tool Loop + Kimi K3 Function Calling | 9 个 Tool（5 个写 + 4 个读）；工具命中 **91%** |
+| **RAG 检索** | pgvector + 智谱 embedding-3（1024 维）+ 余弦相似度 | 9 段医学指南入库；相关性命中 **100%** |
 | **流式输出** | SSE（fetch + ReadableStream）+ 前端字符级打字机节流 | 40 字/秒，不掉帧 |
-| **Guardrails** | system prompt 边界 + 危机关键词前置拦截 + health_notes 硬约束 | 自杀/断食/0 卡/类固醇多重拦截 |
-| **可观测** | `agent_traces` 表记录每轮 iterations / tool_calls / error / latency | — |
+| **Guardrails** | system prompt 边界 + 危机关键词前置拦截 + health_notes 硬约束 | 安全召回 **100%**（5/5 极端场景） |
+| **评估体系** | 20 条 YAML golden set + runner 自动跑 + MD/JSON 报告 | **总体 95%**，4 轮迭代归因 |
+| **可观测** | `agent_traces` 表记录每轮 iterations / tool_calls / error / latency + eval 报告 traceback | — |
 | **鉴权** | PyJWT + 中间件 + 前端过期自动跳登录 | 握手 + 流中双层 401 兜底 |
 
 ---
@@ -78,7 +79,8 @@
 2. **health_notes 硬约束**：画像里的禁忌（低血糖、膝伤…）每次给建议前强制调 `query_user_profile`，避免"忘了"。
 3. **流式 + 打字机解耦**：后端 chunk 推进来是 5-20 字/帧，前端队列化按字节拆单字塞，兼顾真实流式和视觉平顺。
 4. **错误分层**：401 走登录跳转 / 400 原地提示 / 500 吐 trace id。排查过 "PyJWT 异常被 jose except 漏掉变 500" 的真实事故。
-5. **生产可观测**：trace 表里能复盘每轮 LLM 决策（"为啥这条没调工具"），而不是黑盒。
+5. **可量化的质量门**：20 条 YAML golden set + runner 自动跑，通过率从首轮 65% 迭代到 95%；4 轮每一次改动都有具体归因。
+6. **容错的 tool-call JSON 解析**：Kimi 偶发返回拼接格式 `'{}{"ml":500}'` 让 `json.loads` 挂；用 `JSONDecoder.raw_decode` 逐段扫描优先非空字典。eval traceback 把这个隐藏 bug 从 45% 的假阳性中扒出来的。
 
 ---
 
@@ -111,6 +113,7 @@
 4. Kimi K3 不支持 `temperature` 参数：参数剥离兼容
 5. Vue proxy 响应式失败：流式打字机不动，改走 `messages[length-1]`
 6. health_notes 作为 system prompt 动态注入：而不是让 LLM 自己"记住"
+7. **Kimi 返回 tool arguments 偶发拼接格式**：eval runner 加 traceback 后通过率反而掉到 45%，从异常栈里扒出来是 `json.loads` 的锅——改 `raw_decode` 到 95%。观测能力的价值。
 
 ---
 
