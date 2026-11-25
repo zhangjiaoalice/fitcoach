@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onMounted, onUnmounted, ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 
 import Icon from "../components/Icon.vue";
 import { chatStream } from "../api/agent";
@@ -8,6 +8,11 @@ import { ApiError } from "../api/client";
 import Mascot from "../components/Mascot.vue";
 
 const router = useRouter();
+// 获取路由参数
+const route = useRoute();
+
+const { toolKey } = route.query;
+console.error("toolKey=====:", toolKey, route);
 
 function goBack(): void {
   if (window.history.length > 1) router.back();
@@ -347,7 +352,15 @@ function toolStatusLabel(status: ToolCallTrace["status"]): string {
   return status === "running" ? "进行中" : status === "done" ? "完成" : "失败";
 }
 
-onMounted(scrollToBottom);
+onMounted(() => {
+  scrollToBottom();
+  if(toolKey) {
+    activeTool.value = quickTools.find(item => item.key === toolKey);
+    if(activeTool.value) {
+      openTool(activeTool.value);
+    }
+  }
+});
 onUnmounted(stopTyping);
 </script>
 
