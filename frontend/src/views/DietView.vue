@@ -79,20 +79,20 @@ const items = computed<RecordItem[]>(() => {
       summary: s?.weight ? `最近 ${s.weight.latest_kg} kg` : "去记录",
       routeName: "chat",
     },
-    {
-      key: "sleep",
-      emoji: "🌙",
-      label: "睡眠",
-      sub: "入睡 / 睡眠时长",
-      color: "#EDE9FE",
-      accent: "#8B5CF6",
-      summary: s?.sleep
-        ? `${Math.floor(s.sleep.duration_min / 60)}h${
-            s.sleep.duration_min % 60
-          }min`
-        : "去记录",
-      routeName: "chat",
-    },
+    // {
+    //   key: "sleep",
+    //   emoji: "🌙",
+    //   label: "睡眠",
+    //   sub: "入睡 / 睡眠时长",
+    //   color: "#EDE9FE",
+    //   accent: "#8B5CF6",
+    //   summary: s?.sleep
+    //     ? `${Math.floor(s.sleep.duration_min / 60)}h${
+    //         s.sleep.duration_min % 60
+    //       }min`
+    //     : "去记录",
+    //   routeName: "chat",
+    // },
   ];
 });
 
