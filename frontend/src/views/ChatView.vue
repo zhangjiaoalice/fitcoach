@@ -12,7 +12,6 @@ const router = useRouter();
 const route = useRoute();
 
 const { toolKey } = route.query;
-console.error("toolKey=====:", toolKey, route);
 
 function goBack(): void {
   if (window.history.length > 1) router.back();
