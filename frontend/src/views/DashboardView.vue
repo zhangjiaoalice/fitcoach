@@ -17,7 +17,8 @@ const router = useRouter();
 // TODO(Round 2): 这几个目标值应该根据画像(BMR + 目标减脂速度)算出来，从 /profile 读 or 后端 summary 带出
 const DIET_TARGET_KCAL = 1800;
 const WATER_TARGET_ML = 2000;
-const NUTRI_TARGET = { carbs: 225, protein: 90, fat: 60 }; // 克，粗略按 50%/20%/30% 热量分配
+// 1800 kcal × 50% / 4 = 225g 碳水；×20% / 4 = 90g 蛋白；×30% / 9 = 60g 脂肪
+const NUTRI_TARGET = { carbs: 225, protein: 90, fat: 60 };
 
 // ─────────────────────────── 响应式状态 ───────────────────────────
 const loading = ref(true);
@@ -26,6 +27,7 @@ const errorMsg = ref<string | null>(null);
 const summary = ref<RecordSummary | null>(null);
 const dietLogs = ref<DietLogOut[]>([]);
 const workoutLogs = ref<WorkoutLogOut[]>([]);
+const WORKOUT_ICONS = { cardio: "🏃", stretch: "🧘", strength: "🏋️" } as const;
 
 // ─────────────────────────── 数据加载 ───────────────────────────
 function todayISO(): string {
@@ -48,9 +50,12 @@ async function loadAll(): Promise<void> {
     summary.value = s;
     dietLogs.value = d;
     workoutLogs.value = w;
-    console.error("summary, dietLogs, workoutLogs:", s, d, w);
+    console.log("summary, dietLogs, workoutLogs:", s, d, w);
   } catch (e: unknown) {
     errorMsg.value = e instanceof Error ? e.message : "加载失败";
+    summary.value = null;
+    dietLogs.value = [];
+    workoutLogs.value = [];
     console.error("[Dashboard] loadAll failed:", e);
   } finally {
     loading.value = false;
@@ -154,14 +159,6 @@ const waterTarget = computed<number>(() => {
 });
 
 // ─────────────────────────── 今日训练：从 workoutLogs 派生 ───────────────────────────
-//  把 WorkoutLogOut[] 转成模板想要的格式
-//   template 里用的字段：id / type / icon / name / meta(string[]) / done / estKcal
-//   - type: 根据 workout_type 粗分：含"跑/骑/有氧" → "cardio"；含"拉伸/瑜伽" → "stretch"；其他 → "strength"
-//   - icon: strength=🏋️ / cardio=🏃 / stretch=🧘
-//   - name: workout_type 直接用
-//   - meta: [`${duration_min}分钟`, intensity ?? "中等"]
-//   - done: 当天有记录就 = true（简化版，MVP）
-//   - estKcal: 暂时填 0，等后端加 est_kcal 字段再接
 function classifyWorkout(type: string): "cardio" | "stretch" | "strength" {
   // TODO: 实现分类
   if (type.includes("跑") || type.includes("骑") || type.includes("有氧")) {
@@ -174,20 +171,19 @@ function classifyWorkout(type: string): "cardio" | "stretch" | "strength" {
 }
 
 const workoutsToday = computed(() => {
-  return workoutLogs.value.map((w) => ({
-    id: w.id,
-    type: classifyWorkout(w.workout_type),
-    icon:
-      classifyWorkout(w.workout_type) === "cardio"
-        ? "🏃"
-        : classifyWorkout(w.workout_type) === "stretch"
-        ? "🧘"
-        : "🏋️",
-    name: w.workout_type,
-    meta: [`${w.duration_min}分钟`, w.intensity ?? "中等"],
-    done: true,
-    estKcal: 0,
-  }));
+  return workoutLogs.value.map((w) => {
+    const type = classifyWorkout(w.workout_type);
+    const icon = WORKOUT_ICONS[type];
+    return {
+      id: w.id,
+      type,
+      icon,
+      name: w.workout_type,
+      meta: [`${w.duration_min}分钟`, w.intensity ?? "中等"],
+      done: true,
+      estKcal: 0,
+    };
+  });
 });
 
 const workoutDoneCount = computed(
@@ -251,271 +247,283 @@ function startWorkout(): void {
         <Mascot type="momo" variant="avatar" :size="36" />
       </div>
     </header>
-
-    <!-- ========== 半圆饮食评分 ========== -->
-    <div class="gauge-wrap">
-      <svg
-        viewBox="0 0 280 160"
-        class="gauge"
-        preserveAspectRatio="xMidYMid meet"
-      >
-        <!-- 背景半环 -->
-        <path
-          d="M 20 140 A 120 120 0 0 1 260 140"
-          fill="none"
-          stroke="var(--glass-border)"
-          stroke-width="14"
-          stroke-linecap="round"
-        />
-        <!-- 填充半环 -->
-        <path
-          d="M 20 140 A 120 120 0 0 1 260 140"
-          fill="none"
-          :stroke="dietLevel.color"
-          stroke-width="14"
-          stroke-linecap="round"
-          :stroke-dasharray="gaugeCirc"
-          :stroke-dashoffset="gaugeOffset"
-          style="transition: stroke-dashoffset 0.6s ease-out"
-        />
-      </svg>
-      <div class="gauge-center">
-        <p class="gauge-tag">
-          <span class="dot" :style="{ background: dietLevel.color }"></span>
-          饮食
-        </p>
-        <p class="gauge-score">
-          {{ dietScore }}<span class="unit">分</span>
-          <span class="info-ic">ⓘ</span>
-        </p>
-      </div>
+    <div v-if="loading" class="loading-hint">加载中…</div>
+    <div v-else-if="errorMsg" class="error-hint" @click="loadAll">
+      加载失败：{{ errorMsg }}，点击重试
     </div>
-
-    <!-- ========== 营养摘要 ========== -->
-    <div class="summary">
-      <div v-for="(item, i) in summaryItems" :key="i" class="sum-item">
-        <span class="sum-k">{{ item.label }}</span>
-        <span class="sum-v" :style="{ color: item.color }">{{
-          item.value
-        }}</span>
-      </div>
-    </div>
-
-    <!-- ========== AI 洞察 ========== -->
-    <button class="card ai-card" @click="goChat">
-      <div class="ai-head">
-        <span class="ai-dot">✦</span>
-        <span class="ai-title-sm">AI 洞察</span>
-      </div>
-      <p class="ai-main">记录今日的饮食，获取饮食结构详细分析</p>
-      <div class="ai-foot">
-        <div class="meal-chip">
-          <Mascot type="momo" variant="avatar" :size="36" class="meal-mascot" />
-          <div class="meal-info">
-            <p class="meal-name">加餐</p>
-            <p class="meal-sub">记录今天的第一餐</p>
-          </div>
-        </div>
-        <span class="meal-btn">
-          <span class="plus">+</span>
-          记录
-        </span>
-      </div>
-    </button>
-
-    <!-- ========== 饮食摄入 三栏 ========== -->
-    <div class="card">
-      <div class="section-head">
-        <span class="section-ic">🍴</span>
-        <span class="section-title">饮食摄入</span>
-      </div>
-      <div class="intake-row">
-        <div class="intake-col left">
-          <p class="intake-label">饮食摄入</p>
-          <p class="intake-val">{{ dietIntake }}</p>
-          <p class="intake-unit">千卡</p>
-        </div>
-        <div class="intake-col center">
-          <svg viewBox="0 0 100 60" class="half-ring">
-            <path
-              d="M 10 50 A 40 40 0 0 1 90 50"
-              fill="none"
-              stroke="var(--glass-border)"
-              stroke-width="8"
-              stroke-linecap="round"
-            />
-            <path
-              d="M 10 50 A 40 40 0 0 1 90 50"
-              fill="none"
-              stroke="var(--brand)"
-              stroke-width="8"
-              stroke-linecap="round"
-              :stroke-dasharray="125"
-              :stroke-dashoffset="125 * 0.22"
-            />
-          </svg>
-          <p class="intake-label">还可摄入 <span class="info-ic">ⓘ</span></p>
-          <p class="intake-val big">{{ dietTarget - dietIntake }}</p>
-          <p class="intake-sub">推荐摄入 {{ dietTarget }}</p>
-        </div>
-        <div class="intake-col right">
-          <p class="intake-label">运动消耗</p>
-          <p class="intake-val">0</p>
-          <p class="intake-unit">千卡</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- ========== 营养成分 ========== -->
-    <div class="card">
-      <div class="section-head">
-        <span class="section-ic">🧪</span>
-        <span class="section-title">营养成分</span>
-      </div>
-      <div class="nutri-row">
-        <div v-for="n in nutrients" :key="n.label" class="nutri-col">
-          <p class="nutri-label">{{ n.label }}</p>
-          <p class="nutri-val">
-            {{ n.used }}<span class="divider">/</span>{{ n.total }} {{ n.unit }}
+    <div v-else>
+      <!-- ========== 半圆饮食评分 ========== -->
+      <div class="gauge-wrap">
+        <svg
+          viewBox="0 0 280 160"
+          class="gauge"
+          preserveAspectRatio="xMidYMid meet"
+        >
+          <!-- 背景半环 -->
+          <path
+            d="M 20 140 A 120 120 0 0 1 260 140"
+            fill="none"
+            stroke="var(--glass-border)"
+            stroke-width="14"
+            stroke-linecap="round"
+          />
+          <!-- 填充半环 -->
+          <path
+            d="M 20 140 A 120 120 0 0 1 260 140"
+            fill="none"
+            :stroke="dietLevel.color"
+            stroke-width="14"
+            stroke-linecap="round"
+            :stroke-dasharray="gaugeCirc"
+            :stroke-dashoffset="gaugeOffset"
+            style="transition: stroke-dashoffset 0.6s ease-out"
+          />
+        </svg>
+        <div class="gauge-center">
+          <p class="gauge-tag">
+            <span class="dot" :style="{ background: dietLevel.color }"></span>
+            饮食
           </p>
-          <div class="nutri-bar">
-            <div
-              class="nutri-fill"
-              :style="{
-                width: `${Math.min((n.used / n.total) * 100, 100)}%`,
-                background: n.color,
-              }"
-            ></div>
-          </div>
-        </div>
-      </div>
-      <div class="nutri-chart-row">
-        <div class="nutri-legend">
-          <div v-for="n in nutrients" :key="n.label" class="legend-item">
-            <span class="legend-dot" :style="{ background: n.color }"></span>
-            <span class="legend-label">{{ n.label }}</span>
-            <span class="legend-pct">0.0%</span>
-          </div>
-        </div>
-        <div class="donut">
-          <svg viewBox="0 0 100 100">
-            <circle
-              cx="50"
-              cy="50"
-              r="38"
-              fill="none"
-              stroke="var(--glass-border)"
-              stroke-width="12"
-            />
-            <circle
-              cx="50"
-              cy="50"
-              r="38"
-              fill="none"
-              stroke="#DBEAFE"
-              stroke-width="12"
-              stroke-dasharray="80 240"
-              transform="rotate(-90 50 50)"
-            />
-          </svg>
-        </div>
-      </div>
-      <div class="empty-state">
-        <p class="empty-title">暂无数据</p>
-        <p class="empty-sub">请先点击下方「添加数据」记录今天的第一餐吧</p>
-      </div>
-    </div>
-
-    <!-- ========== 饮水 ========== -->
-    <div class="card water-card">
-      <div class="section-head">
-        <span class="section-ic">🥤</span>
-        <span class="section-title">饮水</span>
-        <span class="section-arrow">›</span>
-      </div>
-      <div class="water-row">
-        <div class="water-info">
-          <p class="water-val">
-            <span class="water-num">{{ waterDrunk }}</span> /
-            {{ waterTarget }} 毫升
+          <p class="gauge-score">
+            {{ dietScore }}<span class="unit">分</span>
+            <span class="info-ic">ⓘ</span>
           </p>
         </div>
-        <div class="water-bottle">💧</div>
-      </div>
-    </div>
-
-    <!-- ========== 今日训练 ========== -->
-    <div class="card">
-      <div class="section-head">
-        <span class="section-ic">🏋️</span>
-        <span class="section-title">今日训练</span>
-        <span class="section-arrow">›</span>
       </div>
 
-      <!-- 空状态 -->
-      <div v-if="workoutsToday.length === 0" class="workout-empty">
-        <p class="we-main">还没有训练计划</p>
-        <p class="we-sub">去问 小黑米AI教练 给你安排一份今日训练 →</p>
-        <button class="we-btn" @click="goChat">
-          <Mascot type="momo" variant="avatar" :size="20" />
-          去问 小黑米 AI 教练
-        </button>
+      <!-- ========== 营养摘要 ========== -->
+      <div class="summary">
+        <div v-for="(item, i) in summaryItems" :key="i" class="sum-item">
+          <span class="sum-k">{{ item.label }}</span>
+          <span class="sum-v" :style="{ color: item.color }">{{
+            item.value
+          }}</span>
+        </div>
       </div>
 
-      <!-- 有计划 -->
-      <template v-else>
-        <div class="workout-list">
-          <div
-            v-for="w in workoutsToday"
-            :key="w.id"
-            class="workout-item"
-            :class="[w.type, { done: w.done }]"
-          >
-            <div class="wi-icon">{{ w.icon }}</div>
-            <div class="wi-main">
-              <p class="wi-name">{{ w.name }}</p>
-              <p class="wi-meta">
-                <template v-for="(m, i) in w.meta" :key="i">
-                  <span>{{ m }}</span>
-                  <span v-if="i < w.meta.length - 1" class="wi-dot"></span>
-                </template>
-              </p>
+      <!-- ========== AI 洞察 ========== -->
+      <button class="card ai-card" @click="goChat">
+        <div class="ai-head">
+          <span class="ai-dot">✦</span>
+          <span class="ai-title-sm">AI 洞察</span>
+        </div>
+        <p class="ai-main">记录今日的饮食，获取饮食结构详细分析</p>
+        <div class="ai-foot">
+          <div class="meal-chip">
+            <Mascot
+              type="momo"
+              variant="avatar"
+              :size="36"
+              class="meal-mascot"
+            />
+            <div class="meal-info">
+              <p class="meal-name">加餐</p>
+              <p class="meal-sub">记录今天的第一餐</p>
             </div>
-            <span v-if="w.done" class="wi-check">✓</span>
-            <span v-else class="wi-badge">去训练</span>
+          </div>
+          <span class="meal-btn">
+            <span class="plus">+</span>
+            记录
+          </span>
+        </div>
+      </button>
+
+      <!-- ========== 饮食摄入 三栏 ========== -->
+      <div class="card">
+        <div class="section-head">
+          <span class="section-ic">🍴</span>
+          <span class="section-title">饮食摄入</span>
+        </div>
+        <div class="intake-row">
+          <div class="intake-col left">
+            <p class="intake-label">饮食摄入</p>
+            <p class="intake-val">{{ dietIntake }}</p>
+            <p class="intake-unit">千卡</p>
+          </div>
+          <div class="intake-col center">
+            <svg viewBox="0 0 100 60" class="half-ring">
+              <path
+                d="M 10 50 A 40 40 0 0 1 90 50"
+                fill="none"
+                stroke="var(--glass-border)"
+                stroke-width="8"
+                stroke-linecap="round"
+              />
+              <path
+                d="M 10 50 A 40 40 0 0 1 90 50"
+                fill="none"
+                stroke="var(--brand)"
+                stroke-width="8"
+                stroke-linecap="round"
+                :stroke-dasharray="125"
+                :stroke-dashoffset="125 * 0.22"
+              />
+            </svg>
+            <p class="intake-label">还可摄入 <span class="info-ic">ⓘ</span></p>
+            <p class="intake-val big">{{ dietTarget - dietIntake }}</p>
+            <p class="intake-sub">推荐摄入 {{ dietTarget }}</p>
+          </div>
+          <div class="intake-col right">
+            <p class="intake-label">运动消耗</p>
+            <p class="intake-val">0</p>
+            <p class="intake-unit">千卡</p>
           </div>
         </div>
-        <div class="workout-summary">
-          <p class="ws-text">
-            今日
-            <strong
-              >{{ workoutDoneCount }} / {{ workoutsToday.length }} 完成</strong
-            >
-            · 预计消耗 {{ workoutTotalKcal }} 千卡
-          </p>
-          <button class="ws-btn" @click="startWorkout">开始训练</button>
-        </div>
-      </template>
-    </div>
-
-    <!-- ========== 推广 banner ========== -->
-    <div class="banner">
-      <div class="banner-info">
-        <p class="banner-title">你的饮食结构合理吗？</p>
-        <p class="banner-sub">1 分钟定制你的专属饮食方案</p>
-        <button class="banner-btn" @click="goChat">开启减重计划</button>
       </div>
-      <div class="banner-img">🥗</div>
+
+      <!-- ========== 营养成分 ========== -->
+      <div class="card">
+        <div class="section-head">
+          <span class="section-ic">🧪</span>
+          <span class="section-title">营养成分</span>
+        </div>
+        <div class="nutri-row">
+          <div v-for="n in nutrients" :key="n.label" class="nutri-col">
+            <p class="nutri-label">{{ n.label }}</p>
+            <p class="nutri-val">
+              {{ n.used }}<span class="divider">/</span>{{ n.total }}
+              {{ n.unit }}
+            </p>
+            <div class="nutri-bar">
+              <div
+                class="nutri-fill"
+                :style="{
+                  width: `${Math.min((n.used / n.total) * 100, 100)}%`,
+                  background: n.color,
+                }"
+              ></div>
+            </div>
+          </div>
+        </div>
+        <div class="nutri-chart-row">
+          <div class="nutri-legend">
+            <div v-for="n in nutrients" :key="n.label" class="legend-item">
+              <span class="legend-dot" :style="{ background: n.color }"></span>
+              <span class="legend-label">{{ n.label }}</span>
+              <span class="legend-pct">0.0%</span>
+            </div>
+          </div>
+          <div class="donut">
+            <svg viewBox="0 0 100 100">
+              <circle
+                cx="50"
+                cy="50"
+                r="38"
+                fill="none"
+                stroke="var(--glass-border)"
+                stroke-width="12"
+              />
+              <circle
+                cx="50"
+                cy="50"
+                r="38"
+                fill="none"
+                stroke="#DBEAFE"
+                stroke-width="12"
+                stroke-dasharray="80 240"
+                transform="rotate(-90 50 50)"
+              />
+            </svg>
+          </div>
+        </div>
+        <div class="empty-state">
+          <p class="empty-title">暂无数据</p>
+          <p class="empty-sub">请先点击下方「添加数据」记录今天的第一餐吧</p>
+        </div>
+      </div>
+
+      <!-- ========== 饮水 ========== -->
+      <div class="card water-card">
+        <div class="section-head">
+          <span class="section-ic">🥤</span>
+          <span class="section-title">饮水</span>
+          <span class="section-arrow">›</span>
+        </div>
+        <div class="water-row">
+          <div class="water-info">
+            <p class="water-val">
+              <span class="water-num">{{ waterDrunk }}</span> /
+              {{ waterTarget }} 毫升
+            </p>
+          </div>
+          <div class="water-bottle">💧</div>
+        </div>
+      </div>
+
+      <!-- ========== 今日训练 ========== -->
+      <div class="card">
+        <div class="section-head">
+          <span class="section-ic">🏋️</span>
+          <span class="section-title">今日训练</span>
+          <span class="section-arrow">›</span>
+        </div>
+
+        <!-- 空状态 -->
+        <div v-if="workoutsToday.length === 0" class="workout-empty">
+          <p class="we-main">还没有训练计划</p>
+          <p class="we-sub">去问 小黑米AI教练 给你安排一份今日训练 →</p>
+          <button class="we-btn" @click="goChat">
+            <Mascot type="momo" variant="avatar" :size="20" />
+            去问 小黑米 AI 教练
+          </button>
+        </div>
+
+        <!-- 有计划 -->
+        <template v-else>
+          <div class="workout-list">
+            <div
+              v-for="w in workoutsToday"
+              :key="w.id"
+              class="workout-item"
+              :class="[w.type, { done: w.done }]"
+            >
+              <div class="wi-icon">{{ w.icon }}</div>
+              <div class="wi-main">
+                <p class="wi-name">{{ w.name }}</p>
+                <p class="wi-meta">
+                  <template v-for="(m, i) in w.meta" :key="i">
+                    <span>{{ m }}</span>
+                    <span v-if="i < w.meta.length - 1" class="wi-dot"></span>
+                  </template>
+                </p>
+              </div>
+              <span v-if="w.done" class="wi-check">✓</span>
+              <span v-else class="wi-badge">去训练</span>
+            </div>
+          </div>
+          <div class="workout-summary">
+            <p class="ws-text">
+              今日
+              <strong
+                >{{ workoutDoneCount }} /
+                {{ workoutsToday.length }} 完成</strong
+              >
+              · 预计消耗 {{ workoutTotalKcal }} 千卡
+            </p>
+            <button class="ws-btn" @click="startWorkout">开始训练</button>
+          </div>
+        </template>
+      </div>
+
+      <!-- ========== 推广 banner ========== -->
+      <div class="banner">
+        <div class="banner-info">
+          <p class="banner-title">你的饮食结构合理吗？</p>
+          <p class="banner-sub">1 分钟定制你的专属饮食方案</p>
+          <button class="banner-btn" @click="goChat">开启减重计划</button>
+        </div>
+        <div class="banner-img">🥗</div>
+      </div>
+
+      <!-- 占位，避免被 FAB 挡 -->
+      <div style="height: 80px"></div>
+
+      <!-- ========== 底部 FAB ========== -->
+      <button class="fab" @click="addData">
+        <span class="fab-pen">✎</span>
+        <span>添加数据</span>
+      </button>
     </div>
-
-    <!-- 占位，避免被 FAB 挡 -->
-    <div style="height: 80px"></div>
-
-    <!-- ========== 底部 FAB ========== -->
-    <button class="fab" @click="addData">
-      <span class="fab-pen">✎</span>
-      <span>添加数据</span>
-    </button>
   </div>
 </template>
 
@@ -1126,5 +1134,16 @@ function startWorkout(): void {
 }
 .fab-pen {
   font-size: 16px;
+}
+.loading-hint,
+.error-hint {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-3);
+  font-size: 14px;
+}
+.error-hint {
+  color: var(--danger);
+  cursor: pointer;
 }
 </style>
