@@ -6,6 +6,30 @@ import Icon from "../components/Icon.vue";
 import { chatStream } from "../api/agent";
 import { ApiError } from "../api/client";
 import Mascot from "../components/Mascot.vue";
+import { emit as emitBus, type DataScope } from "../lib/eventBus";
+
+/**
+ * 工具名 → 影响的数据域映射。
+ * Agent 调用写入类工具落库后，前端据此 emit "data-changed"，
+ * 让 Dashboard / 记录页等订阅方按需刷新。
+ *
+ * 只枚举「写入类」工具；query_* 读接口不改状态，不需要上报。
+ */
+const TOOL_SCOPE_MAP: Record<string, DataScope[]> = {
+  log_diet: ["diet"],
+  log_water: ["water"],
+  log_workout: ["workout"],
+  log_weight: ["weight"],
+};
+
+/**
+ * 判断工具执行是否成功：没有 error 字段即视为成功。
+ * 失败场景数据库没变化，emit 出去只会让订阅方做无效刷新。
+ */
+function isToolResultOk(result: Record<string, unknown> | undefined): boolean {
+  if (!result) return false;
+  return !("error" in result);
+}
 
 const router = useRouter();
 // 获取路由参数
@@ -293,6 +317,15 @@ async function handleSend(): Promise<void> {
                 tc.result = event.result;
                 break;
               }
+            }
+
+            // 写入类工具且执行成功 → 通知看板刷新
+            const scope = TOOL_SCOPE_MAP[event.name];
+            if (scope && isToolResultOk(event.result)) {
+              emitBus("data-changed", {
+                scope,
+                source: `agent:${event.name}`,
+              });
             }
             break;
           }

@@ -2,7 +2,7 @@
 /**
  * Dashboard 首页 · Keep 风格改版
  */
-import { computed, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import Mascot from "../components/Mascot.vue";
 
@@ -10,6 +10,7 @@ import Mascot from "../components/Mascot.vue";
 import { getRecordSummary, type RecordSummary } from "../api/record";
 import { listDietLogs, listWorkoutLogs } from "../api/logs";
 import type { DietLogOut, WorkoutLogOut } from "../api/types";
+import { on as onBus } from "../lib/eventBus";
 
 const router = useRouter();
 
@@ -62,8 +63,26 @@ async function loadAll(): Promise<void> {
   }
 }
 
+// ─────────────────────────── 事件订阅：Agent 落库后自动刷新 ───────────────────────────
+// ChatView 的工具调用成功后会 emit("data-changed", { scope, source })，
+// 这里统一监听，当前粗粒度：任何 scope 变化都全量重拉。
+// 后续可以按 payload.scope 做精准刷新，但首页三张卡关联紧，全量也只是 3 个请求，
+// 加上 loadAll 有节流感不强，暂不优化。
+let unsubscribeDataChanged: (() => void) | null = null;
+
 onMounted(() => {
   loadAll();
+
+  unsubscribeDataChanged = onBus("data-changed", (payload) => {
+    console.debug("[Dashboard] data-changed from", payload.source, payload.scope);
+    void loadAll();
+  });
+});
+
+onBeforeUnmount(() => {
+  // 防内存泄漏 —— 组件销毁后 handler 还挂在 bus 上会越积越多
+  unsubscribeDataChanged?.();
+  unsubscribeDataChanged = null;
 });
 
 // ─────────────────────────── 日期显示 ───────────────────────────
