@@ -71,6 +71,7 @@ def _detect_crisis(message: str) -> bool:
     return any(keyword in message for keyword in DANGEROUS_KEYWORDS)
 
 
+<<<<<<< Updated upstream
 def _parse_tool_arguments(fn_name: str, raw: str | None) -> dict:
     """
     容错解析 LLM 返回的 tool arguments JSON 字符串。
@@ -113,11 +114,33 @@ def _parse_tool_arguments(fn_name: str, raw: str | None) -> dict:
         return first_obj
     print(f"[loop] 工具 {fn_name} 参数解析失败，raw={text[:100]!r}")
     return {}
+=======
+def _normalize_history(history: list[dict] | None) -> list[dict]:
+    """
+    规范化前端传来的历史消息，安全兜底：
+      - 只接受 user / assistant 两种 role —— 拒绝伪造的 system 消息（防止绕过安全红线）
+      - 只接受非空 str content
+      - 最多保留最近 6 条（3 轮），防止 context 膨胀
+    """
+    if not history:
+        return []
+    allowed = {"user", "assistant"}
+    cleaned = [
+        {"role": m["role"], "content": m["content"]}
+        for m in history
+        if isinstance(m, dict)
+        and m.get("role") in allowed
+        and isinstance(m.get("content"), str)
+        and m["content"].strip()
+    ]
+    return cleaned[-6:]
+>>>>>>> Stashed changes
 
 
 async def run_agent(
         user_message: str,
         ctx: AgentContext,
+        history: list[dict] | None = None,
         max_iterations: int = 10
 ) -> dict:
     """
@@ -137,9 +160,11 @@ async def run_agent(
             "tool_calls": []
         }
 
-    # 构造messages 存放对话历史
+    # 构造messages：system(动态) + 历史消息 + 当前user
+    # 危机检测仍只扫当前 user_message（见上），history 不参与拦截
     messages = [
         {"role": "system", "content": _build_system_prompt()},
+        *_normalize_history(history),
         {"role": "user", "content": user_message}
     ]
 
@@ -201,6 +226,7 @@ async def run_agent(
 async def run_agent_stream(
     user_message: str,
     ctx: AgentContext,
+    history: list[dict] | None = None,
     max_iterations: int = 10
 ) -> AsyncGenerator[dict, None]:
     """
@@ -234,6 +260,7 @@ async def run_agent_stream(
 
     messages: list[dict] = [
         {"role": "system", "content": _build_system_prompt()},
+        *_normalize_history(history),
         {"role": "user", "content": user_message}
     ]
 

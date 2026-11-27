@@ -118,6 +118,7 @@ export interface AgentToolCall {
 
 export interface ChatIn {
   message: string;
+  history?: {role: string, content: string}[]
 }
 
 export interface ChatOut {

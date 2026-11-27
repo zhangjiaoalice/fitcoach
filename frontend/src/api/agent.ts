@@ -1,7 +1,7 @@
 /**
  * Agent 对话 API。
- * chat        - 非流式(M4 版,一次拿完整回复)
- * chatStream  - 流式 SSE(M7 版,边收边渲染,推荐)
+ * chat        - 非流式
+ * chatStream  - 流式 SSE
  */
 import { ApiError, getToken, handleUnauthorized } from "./client";
 import type { AgentStreamEvent, ChatIn, ChatOut } from "./types";
@@ -28,6 +28,7 @@ export function chat(input: ChatIn): Promise<ChatOut> {
 // ─────────────────────────────────────────────
 export interface ChatStreamOptions {
   message: string;
+  history?: { role: string; content: string }[];
   onEvent: (event: AgentStreamEvent) => void;
   signal?: AbortSignal; // 允许调用方中途取消
 }
@@ -59,7 +60,7 @@ export async function chatStream(opts: ChatStreamOptions): Promise<void> {
       Authorization: `Bearer ${token}`,
       Accept: "text/event-stream",
     },
-    body: JSON.stringify({ message: opts.message }),
+    body: JSON.stringify({ message: opts.message, history: opts.history }),
     signal: opts.signal,
   });
 

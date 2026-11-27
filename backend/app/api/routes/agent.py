@@ -16,6 +16,8 @@ router = APIRouter(prefix="/agent", tags=["agent"])
 class ChatIn(BaseModel):
     """前端发来的对话请求"""
     message: str
+    # 会话内历史消息（前端维护，只含 user/assistant 文本）；无历史时为空
+    history: list[dict] | None = None
 
 class ChatOut(BaseModel):
     """返回给前端的回复"""
@@ -32,7 +34,7 @@ async def chat(data: ChatIn, current_user: User=Depends(get_current_user), db: A
     ctx = AgentContext(db = db, current_user = current_user)
 
     try:
-        result = await run_agent(data.message, ctx)
+        result = await run_agent(data.message, ctx, history=data.history)
     except Exception as e:
         # 出错也要记trace
         await agent_service.save_trace(db, current_user.id, data.message, reply=None, iterations=0, tool_calls=None, error=str(e))
@@ -72,7 +74,7 @@ async def chat_stream(data: ChatIn, current_user: User=Depends(get_current_user)
         nonlocal final_reply, final_iterations, final_tool_calls, final_error
 
         try:
-            async for event in run_agent_stream(data.message, ctx):
+            async for event in run_agent_stream(data.message, ctx, history=data.history):
                 # 转发给前端
                 yield __sse_pack(event)
 

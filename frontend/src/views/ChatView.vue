@@ -263,7 +263,23 @@ async function handleSend(): Promise<void> {
   const text = inputText.value.trim();
   if (!text || sending.value) return;
 
-  // 1. 用户消息落到视图
+  // 1. 构造 history —— 必须在 push 当前消息之前做
+  //    只取最近 n 轮的 user/assistant 文本，跳过 error 消息和空欢迎语；
+  //    正序遍历，保证时间顺序（早 → 晚）；
+  //    当前这条 text 不进 history，它由 message 字段单独传，避免重复。
+  const n = 3;
+  const history: { role: string; content: string }[] = [];
+  const validMsgs = messages.value.filter(
+    (m) => m.type !== "error" && m.text.trim() !== ""
+  );
+  for (const m of validMsgs.slice(-n * 2)) {
+    history.push({
+      role: m.type === "user" ? "user" : "assistant",
+      content: m.text,
+    });
+  }
+
+  // 2. 用户消息落到视图
   pushMessage({ id: nextId++, type: "user", text });
   inputText.value = "";
   sending.value = true;
@@ -292,6 +308,7 @@ async function handleSend(): Promise<void> {
   try {
     await chatStream({
       message: text,
+      history,
       onEvent: (event) => {
         switch (event.type) {
           case "delta":
