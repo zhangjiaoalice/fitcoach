@@ -1,13 +1,41 @@
 <script setup lang="ts">
 import { nextTick, onMounted, onUnmounted, ref } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 
 import Icon from "../components/Icon.vue";
 import { chatStream } from "../api/agent";
 import { ApiError } from "../api/client";
 import Mascot from "../components/Mascot.vue";
+import { emit as emitBus, type DataScope } from "../lib/eventBus";
+
+/**
+ * 工具名 → 影响的数据域映射。
+ * Agent 调用写入类工具落库后，前端据此 emit "data-changed"，
+ * 让 Dashboard / 记录页等订阅方按需刷新。
+ *
+ * 只枚举「写入类」工具；query_* 读接口不改状态，不需要上报。
+ */
+const TOOL_SCOPE_MAP: Record<string, DataScope[]> = {
+  log_diet: ["diet"],
+  log_water: ["water"],
+  log_workout: ["workout"],
+  log_weight: ["weight"],
+};
+
+/**
+ * 判断工具执行是否成功：没有 error 字段即视为成功。
+ * 失败场景数据库没变化，emit 出去只会让订阅方做无效刷新。
+ */
+function isToolResultOk(result: Record<string, unknown> | undefined): boolean {
+  if (!result) return false;
+  return !("error" in result);
+}
 
 const router = useRouter();
+// 获取路由参数
+const route = useRoute();
+
+const { toolKey } = route.query;
 
 function goBack(): void {
   if (window.history.length > 1) router.back();
@@ -290,6 +318,15 @@ async function handleSend(): Promise<void> {
                 break;
               }
             }
+
+            // 写入类工具且执行成功 → 通知看板刷新
+            const scope = TOOL_SCOPE_MAP[event.name];
+            if (scope && isToolResultOk(event.result)) {
+              emitBus("data-changed", {
+                scope,
+                source: `agent:${event.name}`,
+              });
+            }
             break;
           }
 
@@ -347,7 +384,15 @@ function toolStatusLabel(status: ToolCallTrace["status"]): string {
   return status === "running" ? "进行中" : status === "done" ? "完成" : "失败";
 }
 
-onMounted(scrollToBottom);
+onMounted(() => {
+  scrollToBottom();
+  if(toolKey) {
+    activeTool.value = quickTools.find(item => item.key === toolKey);
+    if(activeTool.value) {
+      openTool(activeTool.value);
+    }
+  }
+});
 onUnmounted(stopTyping);
 </script>
 
@@ -383,7 +428,7 @@ onUnmounted(stopTyping);
           <Mascot type="momo" variant="avatar" :size="34" class="row-avatar" />
         </div>
 
-        <!-- AI 气泡（左侧挂 Hero 头像；工具调用卡片 + 回复文本共用一个 avatar） -->
+        <!-- AI 气泡（左侧挂 Hero 头像；工具调用卡片 + 回复文本 + typing 三点共用一个 avatar） -->
         <template v-else-if="m.type === 'assistant'">
           <div class="row row-ai">
             <Mascot
@@ -416,6 +461,15 @@ onUnmounted(stopTyping);
                 <span>{{ m.text }}</span
                 ><span v-if="m.streaming" class="cursor" />
               </div>
+              <!-- 正在生成：无 text + 无工具时显示三点动画，嵌在同一个 row-main 里避免双头像 -->
+              <div
+                v-if="m.streaming && !m.text && m.toolCalls.length === 0"
+                class="typing"
+              >
+                <span class="dot" />
+                <span class="dot" />
+                <span class="dot" />
+              </div>
             </div>
           </div>
         </template>
@@ -428,19 +482,6 @@ onUnmounted(stopTyping);
           <span style="color: var(--warn)">{{ m.text }}</span>
         </div>
       </template>
-
-      <!-- 正在生成（LLM 还没出第一个 token 时，先显示三点动画） -->
-      <div
-        v-if="sending && messages[messages.length - 1]?.type === 'assistant' && !(messages[messages.length - 1] as AssistantMessage).text && (messages[messages.length - 1] as AssistantMessage).toolCalls.length === 0"
-        class="row row-ai typing-row"
-      >
-        <Mascot type="hero" variant="avatar" :size="34" class="row-avatar" />
-        <div class="typing">
-          <span class="dot" />
-          <span class="dot" />
-          <span class="dot" />
-        </div>
-      </div>
     </div>
 
     <div class="footer-btn">
@@ -638,9 +679,6 @@ onUnmounted(stopTyping);
   flex-shrink: 0;
   border: 2px solid var(--glass-border);
   background: var(--bg-elevated);
-}
-.typing-row {
-  align-items: center;
 }
 
 .tool {

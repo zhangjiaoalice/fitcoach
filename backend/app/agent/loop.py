@@ -70,6 +70,51 @@ def _detect_crisis(message: str) -> bool:
     """粗筛查用户输入是否含明显危险信号"""
     return any(keyword in message for keyword in DANGEROUS_KEYWORDS)
 
+
+def _parse_tool_arguments(fn_name: str, raw: str | None) -> dict:
+    """
+    容错解析 LLM 返回的 tool arguments JSON 字符串。
+
+    Kimi 偶发返回的 arguments 不是单一 JSON 对象，而是拼接了多段，如：
+        '{}{"ml":500,...}'    （前导空占位）
+        '{"ml":500,...}trailing'  （尾部残余）
+    普通 json.loads 会抛 "Extra data"。本函数用 JSONDecoder.raw_decode 逐段扫描，
+    返回第一个"非空"字典；都失败则返回空字典（让工具层自行处理参数缺失）。
+    """
+    if not raw:
+        return {}
+
+    text = raw.strip()
+    dec = json.JSONDecoder()
+    pos = 0
+    first_obj: dict | None = None
+
+    while pos < len(text):
+        # 跳过非 JSON 起始字符
+        while pos < len(text) and text[pos] not in "{[":
+            pos += 1
+        if pos >= len(text):
+            break
+        try:
+            obj, consumed = dec.raw_decode(text[pos:])
+        except json.JSONDecodeError:
+            pos += 1
+            continue
+        pos += consumed
+
+        # 优先返回非空对象；全是空 {} 就用最后那个空字典
+        if isinstance(obj, dict):
+            if obj:  # 非空字典直接返回
+                return obj
+            if first_obj is None:
+                first_obj = obj
+
+    if first_obj is not None:
+        return first_obj
+    print(f"[loop] 工具 {fn_name} 参数解析失败，raw={text[:100]!r}")
+    return {}
+
+
 async def run_agent(
         user_message: str,
         ctx: AgentContext,
@@ -125,8 +170,9 @@ async def run_agent(
         # 执行 LLM 要求的工具
         for call in tool_calls:
             fn_name = call["function"]["name"]
-            # LLM 给 arguments 是 JSON 字符串，需要解析成字典 json -> dict: json.loads()
-            arguments = json.loads(call["function"]["arguments"])
+            # LLM 返回的 arguments 是 JSON 字符串，但偶发会带"拼接残余"（如 '{}{"ml":500}'），
+            # 直接 json.loads 会抛 "Extra data"。用 raw_decode 逐段解析，取第一个非空字典。
+            arguments = _parse_tool_arguments(fn_name, call["function"].get("arguments"))
 
             tool = TOOL_REGISTRY.get(fn_name)
             if tool is None:
@@ -274,12 +320,8 @@ async def run_agent_stream(
         # 逐个执行工具
         for slot in tool_calls_buf.values():
             fn_name = slot["name"]
-            try:
-                # json.loads =<json字符串> -> <dict>
-                # json.dumps =<dict> -> <json字符串>
-                arguments = json.loads(slot["arguments"])
-            except json.JSONDecodeError:
-                arguments = {}
+            # 和 run_agent 对齐：容错解析 arguments
+            arguments = _parse_tool_arguments(fn_name, slot.get("arguments"))
             # 通知前端开始调用工具
             yield {"type": "tool_start", "name": fn_name, "arguments": arguments}
 

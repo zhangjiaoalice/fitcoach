@@ -21,7 +21,11 @@ async def create_user(db: AsyncSession, data: UserCreate) -> User:
 
     user = User(email=data.email, hashed_password=hash_password(data.password))
     db.add(user)
-    await db.commit()
+    try:
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        raise ValueError("该邮箱已被注册")
     await db.refresh(user)
     return user
 

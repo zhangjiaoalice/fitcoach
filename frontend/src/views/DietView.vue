@@ -45,6 +45,7 @@ const items = computed<RecordItem[]>(() => {
       summary: s?.diet
         ? `今日 ${s.diet.kcal} 千卡 · ${s.diet.meal_count} 餐`
         : "去记录",
+      routeName: "chat",
     },
     {
       key: "workout",
@@ -56,6 +57,7 @@ const items = computed<RecordItem[]>(() => {
       summary: s?.workout
         ? `今日 ${s.workout.done} / ${s.workout.total} 完成`
         : "去记录",
+      routeName: "chat",
     },
     {
       key: "water",
@@ -64,9 +66,8 @@ const items = computed<RecordItem[]>(() => {
       sub: "喝水量追踪",
       color: "#CCFBF1",
       accent: "#14B8A6",
-      summary: s?.water
-        ? `${s.water.ml} / ${s.water.target_ml} ml`
-        : "去记录",
+      summary: s?.water ? `${s.water.ml} / ${s.water.target_ml} ml` : "去记录",
+      routeName: "chat",
     },
     {
       key: "weight",
@@ -76,18 +77,22 @@ const items = computed<RecordItem[]>(() => {
       color: "#FEE2E2",
       accent: "#EF4444",
       summary: s?.weight ? `最近 ${s.weight.latest_kg} kg` : "去记录",
+      routeName: "chat",
     },
-    {
-      key: "sleep",
-      emoji: "🌙",
-      label: "睡眠",
-      sub: "入睡 / 睡眠时长",
-      color: "#EDE9FE",
-      accent: "#8B5CF6",
-      summary: s?.sleep
-        ? `${Math.floor(s.sleep.duration_min / 60)}h${s.sleep.duration_min % 60}min`
-        : "去记录",
-    },
+    // {
+    //   key: "sleep",
+    //   emoji: "🌙",
+    //   label: "睡眠",
+    //   sub: "入睡 / 睡眠时长",
+    //   color: "#EDE9FE",
+    //   accent: "#8B5CF6",
+    //   summary: s?.sleep
+    //     ? `${Math.floor(s.sleep.duration_min / 60)}h${
+    //         s.sleep.duration_min % 60
+    //       }min`
+    //     : "去记录",
+    //   routeName: "chat",
+    // },
   ];
 });
 
@@ -117,7 +122,7 @@ function showToast(msg: string): void {
 
 function openRecord(item: RecordItem): void {
   if (item.routeName) {
-    router.push({ name: item.routeName });
+    router.push({ name: item.routeName, query: { toolKey: item.key } });
   } else {
     // 子页还没想好，先 toast 占位
     showToast(`${item.label}记录页正在设计中 🛠️`);

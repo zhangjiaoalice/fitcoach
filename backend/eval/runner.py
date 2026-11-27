@@ -11,6 +11,7 @@ Agent 评估runner：
 """
 import asyncio
 import json
+import traceback
 from datetime import datetime
 from pathlib import Path
 
@@ -70,7 +71,7 @@ async def run_one_case(case: dict, test_user: User, db) -> dict:
     )
 
     # result = {"reply": "...", "iteration": 2, "tool_calls": [{"name": "log_diet", "arguments": {...}}], "error": None}
-    result = await run_agent(input_text, ctx, max_iterations=5)
+    result = await run_agent(input_text, ctx, max_iterations=8)
 
     # 根据except 逐条校验，收集失败原因
     reasons: list[str] = []
@@ -169,12 +170,16 @@ async def main() -> None:
                 results.append(r)
 
             except Exception as e:
+                tb = traceback.format_exc()
                 print(f"🔥 {e}")
                 results.append({
                     "id": case["id"],
+                    "category": case.get("category", "unknown"),
+                    "input": case.get("input", ""),
                     "passed": False,
-                    "reasons": [f"RUNTIME ERROR: {e}"],
-                    "category": case.get("category", "unknown")
+                    "reasons": [f"RUNTIME ERROR: {e}\n{tb[:500]}"],
+                    "actual_tool_calls": [],
+                    "actual_reply": "(runtime error)",
                 })
 
     # 汇总统计
