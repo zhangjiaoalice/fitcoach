@@ -71,7 +71,6 @@ def _detect_crisis(message: str) -> bool:
     return any(keyword in message for keyword in DANGEROUS_KEYWORDS)
 
 
-<<<<<<< Updated upstream
 def _parse_tool_arguments(fn_name: str, raw: str | None) -> dict:
     """
     容错解析 LLM 返回的 tool arguments JSON 字符串。
@@ -114,7 +113,6 @@ def _parse_tool_arguments(fn_name: str, raw: str | None) -> dict:
         return first_obj
     print(f"[loop] 工具 {fn_name} 参数解析失败，raw={text[:100]!r}")
     return {}
-=======
 def _normalize_history(history: list[dict] | None) -> list[dict]:
     """
     规范化前端传来的历史消息，安全兜底：
@@ -134,7 +132,6 @@ def _normalize_history(history: list[dict] | None) -> list[dict]:
         and m["content"].strip()
     ]
     return cleaned[-6:]
->>>>>>> Stashed changes
 
 
 async def run_agent(

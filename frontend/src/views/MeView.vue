@@ -18,7 +18,7 @@ const items: MenuItem[] = [
   { icon: "user", label: "个人画像", desc: "身高体重、目标、饮食偏好" },
   { icon: "record", label: "计划中心", desc: "查看与调整每周计划" },
   { icon: "doc", label: "健身知识库", desc: "RAG 知识问答来源" },
-  { icon: "spinner", label: "Agent Trace", desc: "工具调用与执行链路" },
+  // { icon: "spinner", label: "Agent Trace", desc: "工具调用与执行链路" },
 ];
 
 const router = useRouter();
